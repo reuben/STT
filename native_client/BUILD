@@ -1,5 +1,6 @@
 # Description: Deepspeech native client library.
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load(
     "@org_tensorflow//tensorflow:tensorflow.bzl",
     "if_cuda",
