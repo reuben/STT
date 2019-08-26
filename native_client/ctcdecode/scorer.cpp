@@ -48,17 +48,6 @@ Scorer::Scorer(double alpha,
   setup(lm_path, trie_path);
 }
 
-Scorer::Scorer(double alpha,
-               double beta,
-               const std::string& lm_path,
-               const std::string& trie_path,
-               const std::string& alphabet_config_path)
-  : Scorer(alpha, beta)
-{
-  alphabet_.init(alphabet_config_path.c_str());
-  setup(lm_path, trie_path);
-}
-
 void Scorer::setup(const std::string& lm_path, const std::string& trie_path)
 {
   // (Re-)Initialize character map
