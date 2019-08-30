@@ -14,12 +14,14 @@ import progressbar
 import shutil
 import tensorflow as tf
 import tensorflow.compat.v1 as tfv1
+import tensorflow.compat.v2 as tfv2
 import time
 
 from datetime import datetime
 from ds_ctcdecoder import ctc_beam_search_decoder, Scorer
 from evaluate import evaluate
 from six.moves import zip, range
+from tensorflow.keras import layers
 from tensorflow.python.tools import freeze_graph, strip_unused_lib
 from util.config import Config, initialize_globals
 from util.feeding import create_dataset, samples_to_mfccs, audiofile_to_features
