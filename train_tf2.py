@@ -64,20 +64,18 @@ def create_model():
 
 def main(_):
     initialize_globals()
+    train_set = create_dataset(FLAGS.train_files.split(','),
+                               batch_size=FLAGS.train_batch_size,
+                               cache_path=FLAGS.feature_cache)
 
     strategy = tf.distribute.MirroredStrategy()
+    train_set = strategy.experimental_distribute_dataset(train_set)
+
     with strategy.scope():
         model = create_model()
         model.summary()
         optimizer = tf.keras.optimizers.Adam(learning_rate=FLAGS.learning_rate)
 
-    train_set = create_dataset(FLAGS.train_files.split(','),
-                               batch_size=FLAGS.train_batch_size,
-                               cache_path=FLAGS.feature_cache)
-    train_set = strategy.experimental_distribute_dataset(train_set)
-
-    @tf.function
-    def train_step(strategy_inputs):
         def step_fn(inputs):
             batch_x, batch_x_lens, batch_y, batch_y_lens = inputs
 
@@ -97,15 +95,18 @@ def main(_):
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
             return loss
 
-        per_example_losses = strategy.experimental_run_v2(step_fn, args=(strategy_inputs,))
-        mean_loss = strategy.reduce(tf.distribute.ReduceOp.MEAN, per_example_losses, axis=0)
-        return mean_loss
+        @tf.function
+        def dist_train_step(dataset_inputs):
+            per_replica_losses = strategy.experimental_run_v2(step_fn, args=(dataset_inputs,))
+            return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
-    with strategy.scope():
         for epoch in range(FLAGS.epochs):
+            total_loss = 0.0
+            num_steps = 0
             for step, inputs in enumerate(train_set):
-                loss = train_step(inputs)
-                print('Epoch {:>3} - Step {:>3} - Training loss: {:.3f}'.format(epoch, step, float(loss)))
+                total_loss += dist_train_step(inputs)
+                num_steps += 1
+                print('Epoch {:>3} - Step {:>3} - Avg. training loss: {:.3f}'.format(epoch, step, float(total_loss)/num_steps))
 
     # for epoch in range(FLAGS.epochs):
     #     for step, (_, batch_x, batch_x_lens, batch_y, batch_y_lens) in enumerate(train_set):
