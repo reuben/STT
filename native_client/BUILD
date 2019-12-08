@@ -143,11 +143,13 @@ tf_cc_shared_object(
             ### CPU only build, libdeepspeech.so file size reduced by ~50%
             "//tensorflow/core/kernels:spectrogram_op",  # AudioSpectrogram
             "//tensorflow/core/kernels:bias_op",  # BiasAdd
-            "//tensorflow/contrib/rnn:lstm_ops_kernels",  # BlockLSTM
+            "//tensorflow/core/kernels:batch_space_ops",  # BatchToSpaceND
             "//tensorflow/core/kernels:cast_op",  # Cast
+            "//tensorflow/core/kernels:conv_ops",  # Conv2D
             "//tensorflow/core/kernels:concat_op",  # ConcatV2
-            "//tensorflow/core/kernels:constant_op",  # Const, Placeholder
-            "//tensorflow/core/kernels:shape_ops",  # ExpandDims, Shape
+            "//tensorflow/core/kernels:constant_op",  # Const
+            "//tensorflow/core/kernels:depthwise_conv_op",  # DepthwiseConv2dNative
+            "//tensorflow/core/kernels:shape_ops",  # ExpandDims
             "//tensorflow/core/kernels:gather_nd_op",  # GatherNd
             "//tensorflow/core/kernels:identity_op",  # Identity
             "//tensorflow/core/kernels:immutable_constant_op",  # ImmutableConst (used in memmapped models)
@@ -161,6 +163,7 @@ tf_cc_shared_object(
             "//tensorflow/core/kernels:relu_op",  # Relu
             "//tensorflow/core/kernels:reshape_op",  # Reshape
             "//tensorflow/core/kernels:softmax_op",  # Softmax
+            "//tensorflow/core/kernels:split_op",  # Split
             "//tensorflow/core/kernels:tile_ops",  # Tile
             "//tensorflow/core/kernels:transpose_op",  # Transpose
             # And we also need the op libs for these ops used in the model:

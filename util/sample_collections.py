@@ -2,6 +2,7 @@
 import os
 import csv
 import json
+import numpy as np
 
 from pathlib import Path
 from functools import partial
@@ -216,9 +217,10 @@ class SDB:  # pylint: disable=too-many-instance-attributes
 
 class CSV:
     """Sample collection reader for reading a DeepSpeech CSV file"""
-    def __init__(self, csv_filename):
+    def __init__(self, csv_filename, is_train=False):
         self.csv_filename = csv_filename
         self.rows = []
+        self.skipped = 0
         csv_dir = Path(csv_filename).parent
         with open(csv_filename, 'r', encoding='utf8') as csv_file:
             reader = csv.DictReader(csv_file)
@@ -226,7 +228,17 @@ class CSV:
                 wav_filename = Path(row['wav_filename'])
                 if not wav_filename.is_absolute():
                     wav_filename = csv_dir / wav_filename
-                self.rows.append((str(wav_filename), int(row['wav_filesize']), row['transcript']))
+                duration = (row['wav_filesize']-44)/16000/2
+                if is_train and FLAGS.train_audio_min_duration <= duration <= FLAGS.train_audio_max_duration:
+                    self.rows.append((str(wav_filename), int(row['wav_filesize']), row['transcript']))
+                else:
+                    self.skipped += 1
+        print('Skipped {} files due to min and max train audio duration limits.'.format(self.skipped))
+
+        # Limit dev and test sizes to maximum size needed for 99% confidence interval/1% margin of error.
+        if not is_train and FLAGS.limit_dev_test_size:
+            self.rows = np.random.choice(self.rows, size=min(len(self.rows), FLAGS.limit_dev_test_size))
+
         self.rows.sort(key=lambda r: r[1])
 
     def __getitem__(self, i):
@@ -242,17 +254,17 @@ class CSV:
         return len(self.rows)
 
 
-def samples_from_file(filename, buffering=BUFFER_SIZE):
+def samples_from_file(filename, buffering=BUFFER_SIZE, is_train=False):
     """Returns an iterable of LabeledSample objects loaded from a file."""
     ext = os.path.splitext(filename)[1].lower()
     if ext == '.sdb':
         return SDB(filename, buffering=buffering)
     if ext == '.csv':
-        return CSV(filename)
+        return CSV(filename, is_train=is_train)
     raise ValueError('Unknown file type: "{}"'.format(ext))
 
 
-def samples_from_files(filenames, buffering=BUFFER_SIZE):
+def samples_from_files(filenames, buffering=BUFFER_SIZE, is_train=False):
     """Returns an iterable of LabeledSample objects from a list of files."""
     if len(filenames) == 0:
         raise ValueError('No files')

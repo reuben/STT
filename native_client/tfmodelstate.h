@@ -22,11 +22,8 @@ struct TFModelState : public ModelState
 
   virtual void infer(const std::vector<float>& mfcc,
                      unsigned int n_frames,
-                     const std::vector<float>& previous_state_c,
-                     const std::vector<float>& previous_state_h,
                      std::vector<float>& logits_output,
-                     std::vector<float>& state_c_output,
-                     std::vector<float>& state_h_output) override;
+                     unsigned int& encoded_n_frames_output) override;
 
   virtual void compute_mfcc(const std::vector<float>& audio_buffer,
                             std::vector<float>& mfcc_output) override;

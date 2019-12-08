@@ -116,12 +116,10 @@ TFLiteModelState::init(const char* model_path)
 
   // Query all the index once
   input_node_idx_       = get_input_tensor_by_name("input_node");
-  previous_state_c_idx_ = get_input_tensor_by_name("previous_state_c");
-  previous_state_h_idx_ = get_input_tensor_by_name("previous_state_h");
+  input_lengths_idx_    = get_input_tensor_by_name("input_lengths");
   input_samples_idx_    = get_input_tensor_by_name("input_samples");
   logits_idx_           = get_output_tensor_by_name("logits");
-  new_state_c_idx_      = get_output_tensor_by_name("new_state_c");
-  new_state_h_idx_      = get_output_tensor_by_name("new_state_h");
+  encoded_lengths_idx_  = get_output_tensor_by_name("model/encoded_lengths");
   mfccs_idx_            = get_output_tensor_by_name("mfccs");
 
   int metadata_version_idx  = get_output_tensor_by_name("metadata_version");
@@ -220,9 +218,7 @@ TFLiteModelState::init(const char* model_path)
   TfLiteIntArray* dims_input_node = interpreter_->tensor(input_node_idx_)->dims;
 
   n_steps_ = dims_input_node->data[1];
-  n_context_ = (dims_input_node->data[2] - 1) / 2;
-  n_features_ = dims_input_node->data[3];
-  mfcc_feats_per_timestep_ = dims_input_node->data[2] * dims_input_node->data[3];
+  n_features_ = dims_input_node->data[2];
 
   TfLiteIntArray* dims_logits = interpreter_->tensor(logits_idx_)->dims;
   const int final_dim_size = dims_logits->data[1] - 1;
@@ -235,12 +231,6 @@ TFLiteModelState::init(const char* model_path)
               << std::endl;
     return DS_ERR_INVALID_ALPHABET;
   }
-
-  TfLiteIntArray* dims_c = interpreter_->tensor(previous_state_c_idx_)->dims;
-  TfLiteIntArray* dims_h = interpreter_->tensor(previous_state_h_idx_)->dims;
-  assert(dims_c->data[1] == dims_h->data[1]);
-  assert(state_size_ > 0);
-  state_size_ = dims_c->data[1];
 
   return DS_ERR_OK;
 }
@@ -277,22 +267,16 @@ TFLiteModelState::copy_tensor_to_vector(int tensor_idx,
 void
 TFLiteModelState::infer(const vector<float>& mfcc,
                         unsigned int n_frames,
-                        const vector<float>& previous_state_c,
-                        const vector<float>& previous_state_h,
                         vector<float>& logits_output,
-                        vector<float>& state_c_output,
-                        vector<float>& state_h_output)
+                        unsigned int& encoded_n_frames_output)
 {
   const size_t num_classes = alphabet_.GetSize() + 1; // +1 for blank
 
   // Feeding input_node
-  copy_vector_to_tensor(mfcc, input_node_idx_, n_frames*mfcc_feats_per_timestep_);
+  copy_vector_to_tensor(mfcc, input_node_idx_, n_frames*n_features_);
 
-  // Feeding previous_state_c, previous_state_h
-  assert(previous_state_c.size() == state_size_);
-  copy_vector_to_tensor(previous_state_c, previous_state_c_idx_, state_size_);
-  assert(previous_state_h.size() == state_size_);
-  copy_vector_to_tensor(previous_state_h, previous_state_h_idx_, state_size_);
+  int* lengths = interpreter_->typed_tensor<int>(input_lengths_idx_);
+  *lengths = n_frames;
 
   interpreter_->SetExecutionPlan(acoustic_exec_plan_);
   TfLiteStatus status = interpreter_->Invoke();
@@ -302,14 +286,8 @@ TFLiteModelState::infer(const vector<float>& mfcc,
   }
 
   copy_tensor_to_vector(logits_idx_, n_frames * BATCH_SIZE * num_classes, logits_output);
-
-  state_c_output.clear();
-  state_c_output.reserve(state_size_);
-  copy_tensor_to_vector(new_state_c_idx_, state_size_, state_c_output);
-
-  state_h_output.clear();
-  state_h_output.reserve(state_size_);
-  copy_tensor_to_vector(new_state_h_idx_, state_size_, state_h_output);
+  int* encoded_lengths = interpreter_->typed_tensor<int>(encoded_lengths_idx_);
+  encoded_n_frames_output = *encoded_lengths;
 }
 
 void

@@ -18,9 +18,11 @@ def create_flags():
     f.DEFINE_string('read_buffer', '1MB', 'buffer-size for reading samples from datasets (supports file-size suffixes KB, MB, GB, TB)')
     f.DEFINE_string('feature_cache', '', 'cache MFCC features to disk to speed up future training runs ont he same data. This flag specifies the path where cached features extracted from --train_files will be saved. If empty, or if online augmentation flags are enabled, caching will be disabled.')
 
-    f.DEFINE_integer('feature_win_len', 32, 'feature extraction audio window length in milliseconds')
-    f.DEFINE_integer('feature_win_step', 20, 'feature extraction window step length in milliseconds')
+    f.DEFINE_integer('feature_win_len', 20, 'feature extraction audio window length in milliseconds')
+    f.DEFINE_integer('feature_win_step', 10, 'feature extraction window step length in milliseconds')
     f.DEFINE_integer('audio_sample_rate', 16000, 'sample rate value expected by model')
+    f.DEFINE_float('train_audio_max_duration', 10.0, 'max duration of training samples in seconds')
+    f.DEFINE_float('train_audio_min_duration', 0.35, 'min duration of training samples in seconds')
 
     # Data Augmentation
     # ================
@@ -54,6 +56,7 @@ def create_flags():
     # ================
 
     f.DEFINE_integer('epochs', 75, 'how many epochs (complete runs through the train files) to train for')
+    f.DEFINE_integer('total_epochs', 75, 'how many epochs (complete runs through the train files) to train for')
 
     f.DEFINE_float('dropout_rate', 0.05, 'dropout rate for feedforward layers')
     f.DEFINE_float('dropout_rate2', -1.0, 'dropout rate for layer 2 - defaults to dropout_rate')
@@ -64,12 +67,14 @@ def create_flags():
 
     f.DEFINE_float('relu_clip', 20.0, 'ReLU clipping value for non-recurrent layers')
 
-    # Adam optimizer(http://arxiv.org/abs/1412.6980) parameters
+    # NovoGrad parameters https://arxiv.org/abs/1905.11286
 
-    f.DEFINE_float('beta1', 0.9, 'beta 1 parameter of Adam optimizer')
-    f.DEFINE_float('beta2', 0.999, 'beta 2 parameter of Adam optimizer')
-    f.DEFINE_float('epsilon', 1e-8, 'epsilon parameter of Adam optimizer')
-    f.DEFINE_float('learning_rate', 0.001, 'learning rate of Adam optimizer')
+    f.DEFINE_float('beta1', 0.95, 'beta 1 parameter of NovoGrad optimizer')
+    f.DEFINE_float('beta2', 0.5, 'beta 2 parameter of NovoGrad optimizer')
+    f.DEFINE_float('epsilon', 1e-8, 'epsilon parameter of NovoGrad optimizer')
+    f.DEFINE_float('learning_rate', 0.01, 'learning rate of NovoGrad optimizer')
+    f.DEFINE_integer('lr_warm_up', 1000, 'learning rate warm up')
+    f.DEFINE_float('weight_decay', 0.001, 'weight decay')
 
     # Batch sizes
 
@@ -90,9 +95,7 @@ def create_flags():
 
     # Sample limits
 
-    f.DEFINE_integer('limit_train', 0, 'maximum number of elements to use from train set - 0 means no limit')
-    f.DEFINE_integer('limit_dev', 0, 'maximum number of elements to use from validation set- 0 means no limit')
-    f.DEFINE_integer('limit_test', 0, 'maximum number of elements to use from test set- 0 means no limit')
+    f.DEFINE_integer('limit_dev_test_size', 16641, 'maximum size of dev and test sets. Default value is maximum sample size needed for 99% confidence margin/1% margin of error. 0 to disable')
 
     # Checkpointing
 
@@ -147,7 +150,7 @@ def create_flags():
 
     # Geometry
 
-    f.DEFINE_integer('n_hidden', 2048, 'layer width to use when initialising layers')
+    f.DEFINE_integer('n_hidden', 256, 'layer width to use when initialising layers')
 
     # Initialization
 
@@ -177,6 +180,7 @@ def create_flags():
     f.DEFINE_float('lm_beta', 1.85, 'the beta hyperparameter of the CTC decoder. Word insertion weight.')
     f.DEFINE_float('cutoff_prob', 1.0, 'only consider characters until this probability mass is reached. 1.0 = disabled.')
     f.DEFINE_integer('cutoff_top_n', 300, 'only process this number of characters sorted by probability mass for each time step. If bigger than alphabet size, disabled.')
+    f.DEFINE_booelan('use_greedy_decoder', False, 'enable greedy decoding in evaluate.py and --one_shot_infer.')
 
     # Inference mode
 

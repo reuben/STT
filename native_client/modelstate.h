@@ -19,13 +19,10 @@ struct ModelState {
   std::shared_ptr<Scorer> scorer_;
   unsigned int beam_width_;
   unsigned int n_steps_;
-  unsigned int n_context_;
   unsigned int n_features_;
-  unsigned int mfcc_feats_per_timestep_;
   unsigned int sample_rate_;
   unsigned int audio_win_len_;
   unsigned int audio_win_step_;
-  unsigned int state_size_;
 
   ModelState();
   virtual ~ModelState();
@@ -46,11 +43,8 @@ struct ModelState {
    */
   virtual void infer(const std::vector<float>& mfcc,
                      unsigned int n_frames,
-                     const std::vector<float>& previous_state_c,
-                     const std::vector<float>& previous_state_h,
                      std::vector<float>& logits_output,
-                     std::vector<float>& state_c_output,
-                     std::vector<float>& state_h_output) = 0;
+                     unsigned int& encoded_n_frames_output) = 0;
 
   /**
    * @brief Perform decoding of the logits, using basic CTC decoder or

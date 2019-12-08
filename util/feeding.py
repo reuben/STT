@@ -11,6 +11,7 @@ from tensorflow.python.ops import gen_audio_ops as contrib_audio
 from util.config import Config
 from util.text import text_to_char_array
 from util.flags import FLAGS
+from util.logging import log_info
 from util.spectrogram_augmentations import augment_freq_time_mask, augment_dropout, augment_pitch_and_tempo, augment_speed_up, augment_sparse_warp
 from util.audio import change_audio_types, read_frames_from_file, vad_split, pcm_to_np, DEFAULT_FORMAT, AUDIO_TYPE_NP
 from util.sample_collections import samples_from_files
@@ -65,6 +66,7 @@ def samples_to_mfccs(samples, sample_rate, train_phase=False, sample_id=None):
 
     mfccs = contrib_audio.mfcc(spectrogram=spectrogram,
                                sample_rate=sample_rate,
+                               filterbank_channel_count=80,
                                dct_coefficient_count=Config.n_input,
                                upper_frequency_limit=FLAGS.audio_sample_rate/2)
     mfccs = tf.reshape(mfccs, [-1, Config.n_input])
@@ -115,8 +117,9 @@ def create_dataset(sources,
                    exception_box=None,
                    process_ahead=None,
                    buffering=1 * MEGABYTE):
+    samples = samples_from_files(sources, buffering=buffering, is_train=train_phase)
+
     def generate_values():
-        samples = samples_from_files(sources, buffering=buffering)
         for sample in change_audio_types(samples,
                                          AUDIO_TYPE_NP,
                                          process_ahead=2 * batch_size if process_ahead is None else process_ahead):
@@ -146,9 +149,11 @@ def create_dataset(sources,
                               .map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE))
     if enable_cache:
         dataset = dataset.cache(cache_path)
+
     dataset = (dataset.window(batch_size, drop_remainder=True).flat_map(batch_fn)
                       .prefetch(len(Config.available_devices)))
-    return dataset
+
+    return dataset, len(samples) // batch_size
 
 
 def split_audio_file(audio_path,

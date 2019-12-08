@@ -65,10 +65,7 @@ using std::vector;
 */
 struct StreamingState {
   vector<float> audio_buffer_;
-  vector<float> mfcc_buffer_;
   vector<float> batch_buffer_;
-  vector<float> previous_state_c_;
-  vector<float> previous_state_h_;
 
   ModelState* model_;
   DecoderState decoder_state_;
@@ -173,14 +170,9 @@ StreamingState::finalizeStream()
   // Flush audio buffer
   processAudioWindow(audio_buffer_);
 
-  // Add empty mfcc vectors at end of sample
-  for (int i = 0; i < model_->n_context_; ++i) {
-    addZeroMfccWindow();
-  }
-
   // Process final batch
   if (batch_buffer_.size() > 0) {
-    processBatch(batch_buffer_, batch_buffer_.size()/model_->mfcc_feats_per_timestep_);
+    processBatch(batch_buffer_, batch_buffer_.size()/model_->n_features_);
   }
 }
 
@@ -203,21 +195,7 @@ copy_up_to_n(InputIt from_begin, InputIt from_end, OutputIt to_begin, int max_el
 void
 StreamingState::pushMfccBuffer(const vector<float>& buf)
 {
-  auto start = buf.begin();
-  auto end = buf.end();
-  while (start != end) {
-    // Copy from input buffer to mfcc_buffer, stopping if we have a full context window
-    start = copy_up_to_n(start, end, std::back_inserter(mfcc_buffer_),
-                         model_->mfcc_feats_per_timestep_ - mfcc_buffer_.size());
-    assert(mfcc_buffer_.size() <= model_->mfcc_feats_per_timestep_);
-
-    // If we have a full context window
-    if (mfcc_buffer_.size() == model_->mfcc_feats_per_timestep_) {
-      processMfccWindow(mfcc_buffer_);
-      // Shift data by one step of one mfcc feature vector
-      shift_buffer_left(mfcc_buffer_, model_->n_features_);
-    }
-  }
+  processMfccWindow(buf);
 }
 
 void
@@ -228,11 +206,11 @@ StreamingState::processMfccWindow(const vector<float>& buf)
   while (start != end) {
     // Copy from input buffer to batch_buffer, stopping if we have a full batch
     start = copy_up_to_n(start, end, std::back_inserter(batch_buffer_),
-                         model_->n_steps_ * model_->mfcc_feats_per_timestep_ - batch_buffer_.size());
-    assert(batch_buffer_.size() <= model_->n_steps_ * model_->mfcc_feats_per_timestep_);
+                         model_->n_steps_ * model_->n_features_ - batch_buffer_.size());
+    assert(batch_buffer_.size() <= model_->n_steps_ * model->n_features_);
 
     // If we have a full batch
-    if (batch_buffer_.size() == model_->n_steps_ * model_->mfcc_feats_per_timestep_) {
+    if (batch_buffer_.size() == model_->n_steps_ * model_->n_features_) {
       processBatch(batch_buffer_, model_->n_steps_);
       batch_buffer_.resize(0);
     }
@@ -243,13 +221,8 @@ void
 StreamingState::processBatch(const vector<float>& buf, unsigned int n_steps)
 {
   vector<float> logits;
-  model_->infer(buf,
-                n_steps,
-                previous_state_c_,
-                previous_state_h_,
-                logits,
-                previous_state_c_,
-                previous_state_h_);
+  unsigned int encoded_n_steps;
+  model_->infer(buf, n_steps, logits, encoded_n_steps);
 
   const size_t num_classes = model_->alphabet_.GetSize() + 1; // +1 for blank
   const int n_frames = logits.size() / (ModelState::BATCH_SIZE * num_classes);
@@ -258,7 +231,7 @@ StreamingState::processBatch(const vector<float>& buf, unsigned int n_steps)
   vector<double> inputs(logits.begin(), logits.end());
 
   decoder_state_.next(inputs.data(),
-                      n_frames,
+                      encoded_n_steps,
                       num_classes);
 }
 
@@ -375,11 +348,7 @@ DS_CreateStream(ModelState* aCtx,
   }
 
   ctx->audio_buffer_.reserve(aCtx->audio_win_len_);
-  ctx->mfcc_buffer_.reserve(aCtx->mfcc_feats_per_timestep_);
-  ctx->mfcc_buffer_.resize(aCtx->n_features_*aCtx->n_context_, 0.f);
-  ctx->batch_buffer_.reserve(aCtx->n_steps_ * aCtx->mfcc_feats_per_timestep_);
-  ctx->previous_state_c_.resize(aCtx->state_size_, 0.f);
-  ctx->previous_state_h_.resize(aCtx->state_size_, 0.f);
+  ctx->batch_buffer_.reserve(aCtx->n_steps_ * aCtx->n_features_);
   ctx->model_ = aCtx;
 
   const int cutoff_top_n = 40;
