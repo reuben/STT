@@ -138,10 +138,12 @@ def create_dataset(csvs, batch_size, enable_cache=False, cache_path=None, train_
     if enable_cache:
         dataset = dataset.cache(cache_path)
 
-    dataset = (dataset.window(batch_size, drop_remainder=True).flat_map(batch_fn)
-                      .prefetch(num_gpus))
+    if batch_size > 1:
+        dataset = dataset.window(batch_size, drop_remainder=True).flat_map(batch_fn)
 
-    return dataset
+    dataset = dataset.prefetch(num_gpus)
+
+    return dataset, len(df) // batch_size
 
 
 def split_audio_file(audio_path,
