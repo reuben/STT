@@ -11,7 +11,7 @@ from tensorflow.python.ops import gen_audio_ops as contrib_audio
 from .config import Config
 from .text import text_to_char_array
 from .flags import FLAGS
-from .spectrogram_augmentations import augment_freq_time_mask, augment_dropout, augment_pitch_and_tempo, augment_speed_up, augment_sparse_warp
+from .spectrogram_augmentations import augment_freq_time_mask, augment_dropout, augment_pitch_and_tempo, augment_speed_up
 from .audio import change_audio_types, read_frames_from_file, vad_split, pcm_to_np, DEFAULT_FORMAT, AUDIO_TYPE_NP
 from .sample_collections import samples_from_files
 from .helpers import remember_exception, MEGABYTE
@@ -39,13 +39,13 @@ def samples_to_mfccs(samples, sample_rate, train_phase=False, sample_id=None):
                                           keep_prob=FLAGS.augmentation_spec_dropout_keeprate)
 
         # sparse warp must before freq/time masking
-        if FLAGS.augmentation_sparse_warp:
-            spectrogram = augment_sparse_warp(spectrogram,
-                                              time_warping_para=FLAGS.augmentation_sparse_warp_time_warping_para,
-                                              interpolation_order=FLAGS.augmentation_sparse_warp_interpolation_order,
-                                              regularization_weight=FLAGS.augmentation_sparse_warp_regularization_weight,
-                                              num_boundary_points=FLAGS.augmentation_sparse_warp_num_boundary_points,
-                                              num_control_points=FLAGS.augmentation_sparse_warp_num_control_points)
+        # if FLAGS.augmentation_sparse_warp:
+        #     spectrogram = augment_sparse_warp(spectrogram,
+        #                                       time_warping_para=FLAGS.augmentation_sparse_warp_time_warping_para,
+        #                                       interpolation_order=FLAGS.augmentation_sparse_warp_interpolation_order,
+        #                                       regularization_weight=FLAGS.augmentation_sparse_warp_regularization_weight,
+        #                                       num_boundary_points=FLAGS.augmentation_sparse_warp_num_boundary_points,
+        #                                       num_control_points=FLAGS.augmentation_sparse_warp_num_control_points)
 
         if FLAGS.augmentation_freq_and_time_masking:
             spectrogram = augment_freq_time_mask(spectrogram,
@@ -85,17 +85,10 @@ def audio_to_features(audio, sample_rate, train_phase=False, sample_id=None):
     return features, features_len
 
 
-def audiofile_to_features(wav_filename, train_phase=False):
-    samples = tf.io.read_file(wav_filename)
-    decoded = contrib_audio.decode_wav(samples, desired_channels=1)
-    return audio_to_features(decoded.audio, decoded.sample_rate, train_phase=train_phase, sample_id=wav_filename)
-
-
-def entry_to_features(sample_id, audio, sample_rate, transcript, train_phase=False):
+def entry_to_features(sample_id, audio, sample_rate, transcript, transcript_len, train_phase=False):
     # https://bugs.python.org/issue32117
     features, features_len = audio_to_features(audio, sample_rate, train_phase=train_phase, sample_id=sample_id)
-    sparse_transcript = tf.SparseTensor(*transcript)
-    return sample_id, features, features_len, sparse_transcript
+    return sample_id, features, features_len, transcript, transcript_len
 
 
 def to_sparse_tuple(sequence):
@@ -121,8 +114,7 @@ def create_dataset(sources,
                                          AUDIO_TYPE_NP,
                                          process_ahead=2 * batch_size if process_ahead is None else process_ahead):
             transcript = text_to_char_array(sample.transcript, Config.alphabet, context=sample.sample_id)
-            transcript = to_sparse_tuple(transcript)
-            yield sample.sample_id, sample.audio, sample.audio_format[0], transcript
+            yield sample.sample_id, sample.audio, sample.audio_format[0], transcript, len(transcript)
 
     # Batching a dataset of 2D SparseTensors creates 3D batches, which fail
     # when passed to tf.nn.ctc_loss, so we reshape them to remove the extra
@@ -131,22 +123,25 @@ def create_dataset(sources,
         shape = sparse.dense_shape
         return tf.sparse.reshape(sparse, [shape[0], shape[2]])
 
-    def batch_fn(sample_ids, features, features_len, transcripts):
-        features = tf.data.Dataset.zip((features, features_len))
-        features = features.padded_batch(batch_size, padded_shapes=([None, Config.n_input], []))
-        transcripts = transcripts.batch(batch_size).map(sparse_reshape)
+    def batch_fn(sample_ids, features, features_len, transcripts, transcripts_len):
         sample_ids = sample_ids.batch(batch_size)
-        return tf.data.Dataset.zip((sample_ids, features, transcripts))
+        features = features.padded_batch(batch_size,
+                                         padded_shapes=(None, Config.n_input))
+        features_len = features_len.batch(batch_size)
+        transcripts = transcripts.padded_batch(batch_size,
+                                               padded_shapes=(None,))
+        transcripts_len = transcripts_len.batch(batch_size)
+        return tf.data.Dataset.zip((sample_ids, features, features_len, transcripts, transcripts_len))
 
     process_fn = partial(entry_to_features, train_phase=train_phase)
 
-    dataset = (tf.data.Dataset.from_generator(remember_exception(generate_values, exception_box),
+    dataset = (tf.data.Dataset.from_generator(generate_values,
                                               output_types=(tf.string, tf.float32, tf.int32,
-                                                            (tf.int64, tf.int32, tf.int64)))
+                                                            tf.int64, tf.int64))
                               .map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE))
     if enable_cache:
         dataset = dataset.cache(cache_path)
-    dataset = (dataset.window(batch_size, drop_remainder=True).flat_map(batch_fn)
+    dataset = (dataset.window(batch_size).flat_map(batch_fn)
                       .prefetch(len(Config.available_devices)))
     return dataset
 

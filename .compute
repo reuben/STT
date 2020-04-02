@@ -12,9 +12,9 @@ pip install .
 pip uninstall -y tensorflow
 pip install tensorflow-gpu==1.14
 
-mkdir -p ../keep/summaries
+mkdir -p ../ckpt/summaries
 
-data="${SHARED_DIR}/data"
+data="/data/ro/shared/data"
 fis="${data}/LDC/fisher"
 swb="${data}/LDC/LDC97S62/swb"
 lbs="${data}/OpenSLR/LibriSpeech/librivox"
@@ -32,8 +32,8 @@ python -u DeepSpeech.py \
   --n_hidden 2048 \
   --learning_rate 0.0001 \
   --dropout_rate 0.40 \
-  --epochs 150 \
+  --epochs 2 \
   --noearly_stop \
-  --feature_cache "../tmp/feature.cache" \
-  --checkpoint_dir "../keep" \
-  --summary_dir "../keep/summaries"
+  --feature_cache "/data/rw/pit/tmp/feature.cache" \
+  --checkpoint_dir "../ckpt" \
+  --summary_dir "../ckpt/summaries"
