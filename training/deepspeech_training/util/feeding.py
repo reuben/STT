@@ -88,7 +88,7 @@ def audio_to_features(audio, sample_rate, train_phase=False, sample_id=None):
 def entry_to_features(sample_id, audio, sample_rate, transcript, transcript_len, train_phase=False):
     # https://bugs.python.org/issue32117
     features, features_len = audio_to_features(audio, sample_rate, train_phase=train_phase, sample_id=sample_id)
-    return sample_id, features, features_len, transcript, transcript_len
+    return sample_id, features, [features_len], transcript, transcript_len
 
 
 def to_sparse_tuple(sequence):
