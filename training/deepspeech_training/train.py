@@ -62,10 +62,7 @@ class Model(tf.keras.Model):
         self.dense5 = layers.Dense(Config.n_hidden_5, activation=clipped_relu)
         self.dense6 = layers.Dense(Config.n_hidden_6)
 
-    def call(self, inputs, training=True, overlap=True):
-        batch_x = inputs[0]
-        batch_x_lens = inputs[1]
-
+    def call(self, batch_x, training=True, overlap=True):
         if overlap:
             x = self.create_windows(batch_x)
         else:
@@ -98,7 +95,7 @@ class Model(tf.keras.Model):
         _, batch_x, batch_x_lens, batch_y, batch_y_lens = inputs
 
         with tf.GradientTape() as tape:
-            logits = self((batch_x, batch_x_lens), training=True)
+            logits = self(batch_x, training=True)
             loss = tf.nn.ctc_loss(
                 labels=batch_y,
                 logits=logits,
@@ -116,7 +113,7 @@ class Model(tf.keras.Model):
     def test_step(self, inputs):
         _, batch_x, batch_x_lens, batch_y, batch_y_lens = inputs
 
-        logits = self((batch_x, batch_x_lens), training=False)
+        logits = self(batch_x, training=False)
         loss = tf.nn.ctc_loss(
             labels=batch_y,
             logits=logits,
@@ -128,9 +125,8 @@ class Model(tf.keras.Model):
 
         return {"loss": loss}
 
-    def predict_step(self, inputs):
-        batch_x, batch_x_lens = inputs
-        return self((batch_x, batch_x_lens), training=False, overlap=False)
+    def predict_step(self, batch_x):
+        return self(batch_x, training=False, overlap=False)
 
 
 
@@ -178,21 +174,31 @@ def main(_):
         os.path.join(FLAGS.save_checkpoint_dir, "train_weights"), save_format="tf"
     )
 
-    @tf.function()
-    def inference_graph(inputs):
-        return model.predict_step(inputs)
-
-    sample_mfccs = tf.zeros([FLAGS.export_batch_size, FLAGS.n_steps * 19, Config.n_input])
-    sample_lengths = tf.constant([[16]], dtype=tf.int32)
-
-    func = saving_utils.trace_model_call(model)
-    concrete_func = func.get_concrete_function((sample_mfccs, sample_lengths))
-
-    frozen_func, frozen_graph = tf.python.framework.convert_to_constants.convert_variables_to_constants_v2_as_graph(concrete_func)
-    print("\n".join(sorted(set(n.name for n in frozen_graph.node))))
+    @tf.function(input_signature=[tf.TensorSpec(shape=[1, FLAGS.n_steps, 19, 26], dtype=tf.float32)])
+    def inference_graph(input_node):
+        return model.predict_step(tf.reshape(input_node, [1, FLAGS.n_steps * 19, 26]))
 
 
+    sample_mfccs = tf.zeros([FLAGS.export_batch_size, FLAGS.n_steps, 19, Config.n_input])
 
+    concrete_func = inference_graph.get_concrete_function(sample_mfccs)
+
+    # func = saving_utils.trace_model_call(model)
+    # concrete_func = func.get_concrete_function((sample_mfccs, sample_lengths))
+
+    # frozen_func, frozen_graph = tf.python.framework.convert_to_constants.convert_variables_to_constants_v2_as_graph(concrete_func)
+    # print("\n".join(sorted(set(n.name for n in frozen_graph.node))))
+
+    converter = tf.lite.TFLiteConverter([concrete_func])
+    tflite_model = converter.convert()
+
+    output_filename = FLAGS.export_file_name + '.pb'
+    output_tflite_path = os.path.join(FLAGS.export_dir, output_filename.replace('.pb', '.tflite'))
+
+    with open(output_tflite_path, 'wb') as fout:
+        fout.write(tflite_model)
+
+    log_info('Models exported at %s' % (FLAGS.export_dir))
 
 def run_script():
     create_flags()
