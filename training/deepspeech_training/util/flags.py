@@ -5,6 +5,7 @@ import absl.flags
 
 FLAGS = absl.flags.FLAGS
 
+# sphinx-doc: training_ref_flags_start
 def create_flags():
     # Importer
     # ========
@@ -101,7 +102,8 @@ def create_flags():
     f.DEFINE_string('save_checkpoint_dir', '', 'directory to which checkpoints are saved - defaults to directory "deepspeech/checkpoints" within user\'s data home specified by the XDG Base Directory Specification')
     f.DEFINE_integer('checkpoint_secs', 600, 'checkpoint saving interval in seconds')
     f.DEFINE_integer('max_to_keep', 5, 'number of checkpoint files to keep - default value is 5')
-    f.DEFINE_string('load', 'auto', '"last" for loading most recent epoch checkpoint, "best" for loading best validation loss checkpoint, "init" for initializing a fresh model, "transfer" for transfer learning, "auto" for trying several options.')
+    f.DEFINE_string('load_train', 'auto', 'what checkpoint to load before starting the training process. "last" for loading most recent epoch checkpoint, "best" for loading best validation loss checkpoint, "init" for initializing a new checkpoint, "auto" for trying several options.')
+    f.DEFINE_string('load_evaluate', 'auto', 'what checkpoint to load for evaluation tasks (test epochs, model export, single file inference, etc). "last" for loading most recent epoch checkpoint, "best" for loading best validation loss checkpoint, "auto" for trying several options.')
 
     # Transfer Learning
 
@@ -173,8 +175,8 @@ def create_flags():
     f.DEFINE_string('scorer_path', 'data/lm/kenlm.scorer', 'path to the external scorer file created with data/lm/generate_package.py')
     f.DEFINE_alias('scorer', 'scorer_path')
     f.DEFINE_integer('beam_width', 1024, 'beam width used in the CTC decoder when building candidate transcriptions')
-    f.DEFINE_float('lm_alpha', 0.75, 'the alpha hyperparameter of the CTC decoder. Language Model weight.')
-    f.DEFINE_float('lm_beta', 1.85, 'the beta hyperparameter of the CTC decoder. Word insertion weight.')
+    f.DEFINE_float('lm_alpha', 0.931289039105002, 'the alpha hyperparameter of the CTC decoder. Language Model weight.')
+    f.DEFINE_float('lm_beta', 1.1834137581510284, 'the beta hyperparameter of the CTC decoder. Word insertion weight.')
     f.DEFINE_float('cutoff_prob', 1.0, 'only consider characters until this probability mass is reached. 1.0 = disabled.')
     f.DEFINE_integer('cutoff_top_n', 300, 'only process this number of characters sorted by probability mass for each time step. If bigger than alphabet size, disabled.')
 
@@ -197,3 +199,5 @@ def create_flags():
     f.register_validator('one_shot_infer',
                          lambda value: not value or os.path.isfile(value),
                          message='The file pointed to by --one_shot_infer must exist and be readable.')
+
+# sphinx-doc: training_ref_flags_end
