@@ -25,7 +25,7 @@ struct ModelState {
   unsigned int sample_rate_;
   unsigned int audio_win_len_;
   unsigned int audio_win_step_;
-  unsigned int state_size_;
+  unsigned int state_size_;	
 
   ModelState();
   virtual ~ModelState();
@@ -60,7 +60,7 @@ struct ModelState {
    *
    * @return String representing the decoded text.
    */
-  virtual char* decode(const DecoderState& state) const;
+  virtual char* decode(const DecoderState& state, bool keyword_spotter_mode) const;
 
   /**
    * @brief Return character-level metadata including letter timings.
@@ -73,7 +73,8 @@ struct ModelState {
    * The user is responsible for freeing Result by calling DS_FreeMetadata().
    */
   virtual Metadata* decode_metadata(const DecoderState& state,
-                                    size_t num_results);
+                                    size_t num_results,
+								    bool keyword_spotter_mode);
 };
 
 #endif // MODELSTATE_H

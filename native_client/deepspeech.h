@@ -181,6 +181,8 @@ int DS_SetScorerAlphaBeta(ModelState* aCtx,
  * @param aBuffer A 16-bit, mono raw audio signal at the appropriate
  *                sample rate (matching what the model was trained on).
  * @param aBufferSize The number of samples in the audio signal.
+ * @param keyword_spotter_mode switch between full speech recognition and keyword spotting
+ * @param labels list containing key word to spot 
  *
  * @return The STT result. The user is responsible for freeing the string using
  *         {@link DS_FreeString()}. Returns NULL on error.
@@ -188,7 +190,9 @@ int DS_SetScorerAlphaBeta(ModelState* aCtx,
 DEEPSPEECH_EXPORT
 char* DS_SpeechToText(ModelState* aCtx,
                       const short* aBuffer,
-                      unsigned int aBufferSize);
+                      unsigned int aBufferSize,
+					  bool keyword_spotter_mode,
+				      const std::vector<int>& labels);
 
 /**
  * @brief Use the DeepSpeech model to convert speech to text and output results
@@ -199,6 +203,8 @@ char* DS_SpeechToText(ModelState* aCtx,
  *                sample rate (matching what the model was trained on).
  * @param aBufferSize The number of samples in the audio signal.
  * @param aNumResults The maximum number of CandidateTranscript structs to return. Returned value might be smaller than this.
+ * @param keyword_spotter_mode switch between full speech recognition and keyword spotting
+ * @param labels list containing key word to spot 
  *
  * @return Metadata struct containing multiple CandidateTranscript structs. Each
  *         transcript has per-token metadata including timing information. The
@@ -209,7 +215,9 @@ DEEPSPEECH_EXPORT
 Metadata* DS_SpeechToTextWithMetadata(ModelState* aCtx,
                                       const short* aBuffer,
                                       unsigned int aBufferSize,
-                                      unsigned int aNumResults);
+                                      unsigned int aNumResults,
+									  bool keyword_spotter_mode,
+				                      const std::vector<int>& labels);
 
 /**
  * @brief Create a new streaming inference state. The streaming state returned
@@ -217,6 +225,8 @@ Metadata* DS_SpeechToTextWithMetadata(ModelState* aCtx,
  *        and {@link DS_FinishStream()}.
  *
  * @param aCtx The ModelState pointer for the model to use.
+ * @param keyword_spotter_mode switch between full speech recognition and keyword spotting
+ * @param labels list containing key word to spot 
  * @param[out] retval an opaque pointer that represents the streaming state. Can
  *                    be NULL if an error occurs.
  *
@@ -224,7 +234,9 @@ Metadata* DS_SpeechToTextWithMetadata(ModelState* aCtx,
  */
 DEEPSPEECH_EXPORT
 int DS_CreateStream(ModelState* aCtx,
-                    StreamingState** retval);
+                    StreamingState** retval,
+				    bool keyword_spotter_mode=false,
+				    const std::vector<int>& labels={});
 
 /**
  * @brief Feed audio samples to an ongoing streaming inference.

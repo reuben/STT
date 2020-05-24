@@ -30,17 +30,19 @@ ModelState::init(const char* model_path)
 }
 
 char*
-ModelState::decode(const DecoderState& state) const
+ModelState::decode(const DecoderState& state,
+				   bool keyword_spotter_mode) const
 {
-  vector<Output> out = state.decode();
+  vector<Output> out = keyword_spotter_mode ? state.kws_decode() : state.state.decode();
   return strdup(alphabet_.LabelsToString(out[0].tokens).c_str());
 }
 
 Metadata*
 ModelState::decode_metadata(const DecoderState& state, 
-                            size_t num_results)
+                            size_t num_results,
+						    bool keyword_spotter_mode)
 {
-  vector<Output> out = state.decode(num_results);
+  vector<Output> out = keyword_spotter_mode ? state.kws_decode(num_results) : state.decode(num_results);
   unsigned int num_returned = out.size();
 
   CandidateTranscript* transcripts = (CandidateTranscript*)malloc(sizeof(CandidateTranscript)*num_returned);
