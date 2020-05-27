@@ -33,7 +33,7 @@ char*
 ModelState::decode(const DecoderState& state,
 				   bool keyword_spotter_mode) const
 {
-  vector<Output> out = keyword_spotter_mode ? state.kws_decode() : state.state.decode();
+  vector<Output> out = keyword_spotter_mode ? state.kws_decode() : state.decode();
   return strdup(alphabet_.LabelsToString(out[0].tokens).c_str());
 }
 

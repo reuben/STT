@@ -94,16 +94,16 @@ int DecoderState::kws_init(const Alphabet& alphabet,
                            const std::vector<int>& labels)
 {
   blank_id_ = alphabet.GetSize();
-  int repeats = setup_labels(labels,
-                               blank_id_,
-                               labels_w_blanks,
-                               s_inc,
-                               e_inc);
-  S = labels_w_blanks.size();
-  prev_alphas = new double[S];
-  next_alphas = new double[S];
+  repeats = setup_labels(labels,
+                             blank_id_,
+                             labels_w_blanks,
+                             s_inc,
+                             e_inc);
+  int S = labels_w_blanks.size();
+  prev_alphas.reserve(S);
+  next_alphas.reserve(S);
   neginf = -std::numeric_limits<double>::infinity();
-  std::fill(prev_alphas, prev_alphas + S, neginf);
+  std::fill(prev_alphas.begin(), prev_alphas.begin() + S, neginf);
   return 0;
 }
 
@@ -244,7 +244,7 @@ void DecoderState::kws_next(const double* probs,
         }
     }
     for(int t = 1; t < T; ++t) {
-      std::fill(next_alphas, next_alphas + S, neginf);
+      std::fill(next_alphas.begin(), next_alphas.begin() + S, neginf);
 
       int remain = (S / 2) + repeats - (T - t);
       if(remain >= 0)
@@ -336,21 +336,17 @@ DecoderState::decode(size_t num_results) const
 }
 
 
-std::vector<Output> DecoderState::kws_decode(size_t num_results=1) const 
+std::vector<Output> DecoderState::kws_decode(size_t num_results) const 
 {
 	std::vector<Output> outputs;
 	outputs.reserve(num_results);
 	double loglike = neginf;
     for(int i = kws_start; i < kws_end; ++i) {
-	  Outout output;	
+	  Output output;	
       loglike = log_add(loglike, prev_alphas[i], neginf);
 	  output.confidence = -loglike;	
 	  outputs.push_back(output);	
     }
-    // Cleanup
-    delete[] prev_alphas;
-    delete[] next_alphas;
-
     return outputs;
 }
 

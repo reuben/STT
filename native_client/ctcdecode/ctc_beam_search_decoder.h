@@ -21,7 +21,16 @@ class DecoderState {
   std::shared_ptr<Scorer> ext_scorer_;
   std::vector<PathTrie*> prefixes_;
   std::unique_ptr<PathTrie> prefix_root_;
-
+  std::vector<int> labels_w_blanks;
+  std::vector<int> e_inc;
+  std::vector<int> s_inc;
+  std::vector<double> prev_alphas;	
+  std::vector<double> next_alphas;	
+  int S;	
+  int kws_start;
+  int kws_end;	
+  double neginf;
+  int repeats;	
 public:
   DecoderState() = default;
   ~DecoderState() = default;

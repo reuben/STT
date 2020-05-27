@@ -263,7 +263,7 @@ StreamingState::processBatch(const vector<float>& buf, unsigned int n_steps)
 						  n_frames,
 						  num_classes);
   }else {
-  	  decoder_state_.kws_next(nputs.data(),
+  	  decoder_state_.kws_next(inputs.data(),
 						      n_frames,
 						      num_classes);
   }
@@ -400,7 +400,7 @@ DS_CreateStream(ModelState* aCtx,
 							   cutoff_top_n,
 							   aCtx->scorer_);
   }else {
-  	  ctx->decode_state_.kws_init(aCtx->alphabet_,
+  	  ctx->decoder_state_.kws_init(aCtx->alphabet_,
                                   labels);
   }
   *retval = ctx.release();
