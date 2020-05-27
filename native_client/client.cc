@@ -161,19 +161,20 @@ LocalDsSTT(ModelState* aCtx, const short* aBuffer, size_t aBufferSize,
   ds_result res = {0};
 
   clock_t ds_start_time = clock();
-
+  std::string unparsed_label(labels != NULL ? labels : "");
+  std::vector<int> input_labels(unparsed_label.begin(), unparsed_label.end());	
   // sphinx-doc: c_ref_inference_start
   if (extended_output) {
-    Metadata *result = DS_SpeechToTextWithMetadata(aCtx, aBuffer, aBufferSize, 1);
+    Metadata *result = DS_SpeechToTextWithMetadata(aCtx, aBuffer, aBufferSize, 1, key_word_spotter_mode, input_labels);
     res.string = CandidateTranscriptToString(&result->transcripts[0]);
     DS_FreeMetadata(result);
   } else if (json_output) {
-    Metadata *result = DS_SpeechToTextWithMetadata(aCtx, aBuffer, aBufferSize, json_candidate_transcripts);
+    Metadata *result = DS_SpeechToTextWithMetadata(aCtx, aBuffer, aBufferSize, json_candidate_transcripts, key_word_spotter_mode, input_labels);
     res.string = MetadataToJSON(result);
     DS_FreeMetadata(result);
   } else if (stream_size > 0) {
     StreamingState* ctx;
-    int status = DS_CreateStream(aCtx, &ctx);
+    int status = DS_CreateStream(aCtx, &ctx, key_word_spotter_mode, input_labels);
     if (status != DS_ERR_OK) {
       res.string = strdup("");
       return res;
@@ -197,7 +198,7 @@ LocalDsSTT(ModelState* aCtx, const short* aBuffer, size_t aBufferSize,
     }
     res.string = DS_FinishStream(ctx);
   } else {
-    res.string = DS_SpeechToText(aCtx, aBuffer, aBufferSize);
+    res.string = DS_SpeechToText(aCtx, aBuffer, aBufferSize, key_word_spotter_mode, input_labels);
   }
   // sphinx-doc: c_ref_inference_stop
 

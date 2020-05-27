@@ -38,6 +38,9 @@ int json_candidate_transcripts = 3;
 
 int stream_size = 0;
 
+bool key_word_spotter_mode = false;
+char *labels = NULL;
+
 void PrintHelp(const char* bin)
 {
     std::cout <<
@@ -56,6 +59,7 @@ void PrintHelp(const char* bin)
     "\t--json\t\t\t\tExtended output, shows word timings as JSON\n"
     "\t--candidate_transcripts NUMBER\tNumber of candidate transcripts to include in output\n"
     "\t--stream size\t\t\tRun in stream mode, output intermediate results\n"
+	"\t--key_word_spotter keyword \t\t\tRun run in keyword spotter mode \n"	
     "\t--help\t\t\t\tShow help\n"
     "\t--version\t\t\tPrint version and exits\n";
     char* version = DS_Version();
@@ -66,7 +70,7 @@ void PrintHelp(const char* bin)
 
 bool ProcessArgs(int argc, char** argv)
 {
-    const char* const short_opts = "m:l:a:b:c:d:tejs:vh";
+    const char* const short_opts = "m:l:a:b:c:d:tejs:vh:k";
     const option long_opts[] = {
             {"model", required_argument, nullptr, 'm'},
             {"scorer", required_argument, nullptr, 'l'},
@@ -81,6 +85,7 @@ bool ProcessArgs(int argc, char** argv)
             {"stream", required_argument, nullptr, 's'},
             {"version", no_argument, nullptr, 'v'},
             {"help", no_argument, nullptr, 'h'},
+		    {"key_word_spotter", no_argument, nullptr, 'k'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -143,6 +148,9 @@ bool ProcessArgs(int argc, char** argv)
         case 'v':
             has_versions = true;
             break;
+		case 'k':
+			key_word_spotter_mode = true;
+			labels = optarg;	
 
         case 'h': // -h or --help
         case '?': // Unrecognized option

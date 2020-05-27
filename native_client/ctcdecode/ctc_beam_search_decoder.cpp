@@ -232,7 +232,7 @@ DecoderState::next(const double *probs,
 void DecoderState::kws_next(const double* probs,
 				const int T, 
 				const int alphabet_size)
-{
+{   
 	int kws_start =  (((S /2) + repeats - T) < 0) ? 0 : 1,
       kws_end = S > 1 ? 2 : 1;
     for (int i = kws_start; i < kws_end; ++i) {
