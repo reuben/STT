@@ -83,9 +83,9 @@ bool ProcessArgs(int argc, char** argv)
             {"json", no_argument, nullptr, 'j'},
             {"candidate_transcripts", required_argument, nullptr, 150},
             {"stream", required_argument, nullptr, 's'},
+            {"key_word_spotter", required_argument, nullptr, 'k'},
             {"version", no_argument, nullptr, 'v'},
             {"help", no_argument, nullptr, 'h'},
-		    {"key_word_spotter", no_argument, nullptr, 'k'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -148,9 +148,11 @@ bool ProcessArgs(int argc, char** argv)
         case 'v':
             has_versions = true;
             break;
+
 		case 'k':
 			key_word_spotter_mode = true;
-			labels = optarg;	
+			labels = optarg;
+            break;
 
         case 'h': // -h or --help
         case '?': // Unrecognized option
