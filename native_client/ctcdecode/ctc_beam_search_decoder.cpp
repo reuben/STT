@@ -18,41 +18,41 @@ int setup_labels(const std::vector<int>& labels,
                  std::vector<int>& labels_w_blanks,
                  std::vector<int>& s_inc,
                  std::vector<int>& e_inc) {
-    const int L = labels.size();
-    int repeats = 0;
-    s_inc.push_back(1);
-    for (int i = 1; i < L; ++i) {
-        if (labels[i-1] == labels[i]) {
-            s_inc.push_back(1);
-            s_inc.push_back(1);
-            e_inc.push_back(1);
-            e_inc.push_back(1);
-            ++repeats;
-        }
-        else {
-            s_inc.push_back(2);
-            e_inc.push_back(2);
-        }
+  const int L = labels.size();
+  int repeats = 0;
+  s_inc.push_back(1);
+  for (int i = 1; i < L; ++i) {
+    if (labels[i-1] == labels[i]) {
+      s_inc.push_back(1);
+      s_inc.push_back(1);
+      e_inc.push_back(1);
+      e_inc.push_back(1);
+      ++repeats;
     }
-    e_inc.push_back(1);
+    else {
+      s_inc.push_back(2);
+      e_inc.push_back(2);
+    }
+  }
+  e_inc.push_back(1);
 
-    for (int i = 0; i < L; ++i) {
-        labels_w_blanks.push_back(blank_id_);
-        labels_w_blanks.push_back(labels[i]);
-    }
+  for (int i = 0; i < L; ++i) {
     labels_w_blanks.push_back(blank_id_);
+    labels_w_blanks.push_back(labels[i]);
+  }
+  labels_w_blanks.push_back(blank_id_);
 
-    return repeats;
+  return repeats;
 }
 
 // helper function for kws_next
 double log_add(double a, double b, double neginf) {
-      if (a == neginf) return b;
-      if (b == neginf) return a;
-      if (a > b)
-        return log1p(exp(b-a)) + a;
-      else
-        return log1p(exp(a-b)) + b;
+  if (a == neginf) return b;
+  if (b == neginf) return a;
+  if (a > b)
+    return log1p(exp(b-a)) + a;
+  else
+    return log1p(exp(a-b)) + b;
 }
 
 int
@@ -230,56 +230,56 @@ DecoderState::next(const double *probs,
 }
 
 void DecoderState::kws_next(const double* probs,
-				const int T, 
-				const int alphabet_size)
-{   
+                const int T,
+                const int alphabet_size)
+{
   kws_start =  (((S /2) + repeats - T) < 0) ? 0 : 1;
   kws_end = S > 1 ? 2 : 1;
-    for (int i = kws_start; i < kws_end; ++i) {
-        if (i == 0) {
-            prev_alphas[i] = std::log(1 - probs[labels_w_blanks[1]]);
-        } else {
-            int l = labels_w_blanks[i];
-            prev_alphas[i] = std::log(probs[l]);
-        }
-    }
-    for(int t = 1; t < T; ++t) {
-      std::fill(next_alphas.begin(), next_alphas.begin() + S, neginf);
-
-      int remain = (S / 2) + repeats - (T - t);
-      if(remain >= 0)
-        kws_start += s_inc[remain];
-      if(t <= (S / 2) + repeats)
-        kws_end += e_inc[t - 1];
-      int startloop = kws_start;
-      int idx = t * alphabet_size;
-
-      if (kws_start == 0) {
-        double star_score = std::log(1 - probs[idx + labels_w_blanks[1]]);
-        next_alphas[0] = prev_alphas[0] + star_score;
-        startloop += 1;
+  for (int i = kws_start; i < kws_end; ++i) {
+      if (i == 0) {
+          prev_alphas[i] = std::log(1 - probs[labels_w_blanks[1]]);
+      } else {
+          int l = labels_w_blanks[i];
+          prev_alphas[i] = std::log(probs[l]);
       }
+  }
+  for(int t = 1; t < T; ++t) {
+    std::fill(next_alphas.begin(), next_alphas.begin() + S, neginf);
 
-      for(int i = startloop; i < kws_end; ++i) {
-        int l = labels_w_blanks[i];
-        double prev_sum = log_add(prev_alphas[i], prev_alphas[i-1], neginf);
+    int remain = (S / 2) + repeats - (T - t);
+    if(remain >= 0)
+      kws_start += s_inc[remain];
+    if(t <= (S / 2) + repeats)
+      kws_end += e_inc[t - 1];
+    int startloop = kws_start;
+    int idx = t * alphabet_size;
 
-        // Skip two if not on blank and not on repeat.
-        if (l != blank_id_ && i != 1 &&
-            l != labels_w_blanks[i-2])
-          prev_sum = log_add(prev_sum, prev_alphas[i-2], neginf);
-
-        next_alphas[i] = prev_sum;
-        if (i == labels_w_blanks.size() - 1) {
-          double nl_score = probs[idx + labels_w_blanks[i-1]];
-          next_alphas[i] += std::log(1 - nl_score);
-        } else {
-          next_alphas[i] += std::log(probs[l + idx]);
-        }
-      }
-      std::swap(prev_alphas, next_alphas);
+    if (kws_start == 0) {
+      double star_score = std::log(1 - probs[idx + labels_w_blanks[1]]);
+      next_alphas[0] = prev_alphas[0] + star_score;
+      startloop += 1;
     }
-}	
+
+    for(int i = startloop; i < kws_end; ++i) {
+      int l = labels_w_blanks[i];
+      double prev_sum = log_add(prev_alphas[i], prev_alphas[i-1], neginf);
+
+      // Skip two if not on blank and not on repeat.
+      if (l != blank_id_ && i != 1 &&
+          l != labels_w_blanks[i-2])
+        prev_sum = log_add(prev_sum, prev_alphas[i-2], neginf);
+
+      next_alphas[i] = prev_sum;
+      if (i == labels_w_blanks.size() - 1) {
+        double nl_score = probs[idx + labels_w_blanks[i-1]];
+        next_alphas[i] += std::log(1 - nl_score);
+      } else {
+        next_alphas[i] += std::log(probs[l + idx]);
+      }
+    }
+    std::swap(prev_alphas, next_alphas);
+  }
+}
 
 std::vector<Output>
 DecoderState::decode(size_t num_results) const
@@ -336,18 +336,18 @@ DecoderState::decode(size_t num_results) const
 }
 
 
-std::vector<Output> DecoderState::kws_decode(size_t num_results) const 
+std::vector<Output> DecoderState::kws_decode(size_t num_results) const
 {
-	std::vector<Output> outputs;
-	outputs.reserve(num_results);
-	double loglike = neginf;
-    for(int i = kws_start; i < kws_end; ++i) {
-	  Output output;	
-      loglike = log_add(loglike, prev_alphas[i], neginf);
-	  output.confidence = -loglike;	
-	  outputs.push_back(output);	
-    }
-    return outputs;
+  std::vector<Output> outputs;
+  outputs.reserve(num_results);
+  double loglike = neginf;
+  for(int i = kws_start; i < kws_end; ++i) {
+    Output output;
+    loglike = log_add(loglike, prev_alphas[i], neginf);
+    output.confidence = -loglike;
+    outputs.push_back(output);
+  }
+  return outputs;
 }
 
 std::vector<Output> ctc_beam_search_decoder(
@@ -367,7 +367,7 @@ std::vector<Output> ctc_beam_search_decoder(
 }
 
 std::vector<Output> kws_decoder(
-	const double* probs,
+    const double* probs,
     int time_dim,
     int class_dim,
     const Alphabet &alphabet,
@@ -375,9 +375,9 @@ std::vector<Output> kws_decoder(
 {
   DecoderState state;
   state.kws_init(alphabet, labels);
-  state.kws_next(probs, time_dim, class_dim);	
-  return state.kws_decode();	
-}	
+  state.kws_next(probs, time_dim, class_dim);
+  return state.kws_decode();
+}
 
 std::vector<std::vector<Output>>
 ctc_beam_search_decoder_batch(
@@ -423,35 +423,35 @@ ctc_beam_search_decoder_batch(
 
 std::vector<std::vector<Output>>
 kws_decoder_batch(
-	const double* probs,
-	int batch_size,
+    const double* probs,
+    int batch_size,
     int time_dim,
     int class_dim,
-	const int* seq_lengths,
+    const int* seq_lengths,
     int seq_lengths_size,
     const Alphabet &alphabet,
-	size_t num_processes,
-    const std::vector<int>& labels) 
+    size_t num_processes,
+    const std::vector<int>& labels)
 {
-	VALID_CHECK_GT(num_processes, 0, "num_processes must be nonnegative!");
-    VALID_CHECK_EQ(batch_size, seq_lengths_size, "must have one sequence length per batch element");
-    // thread pool
-    ThreadPool pool(num_processes);
+  VALID_CHECK_GT(num_processes, 0, "num_processes must be nonnegative!");
+  VALID_CHECK_EQ(batch_size, seq_lengths_size, "must have one sequence length per batch element");
+  // thread pool
+  ThreadPool pool(num_processes);
 
-    // enqueue the tasks of decoding
-    std::vector<std::future<std::vector<Output>>> res;
-	for (size_t i = 0; i < batch_size; ++i) {
-	  res.emplace_back(pool.enqueue(kws_decoder,
-					                &probs[i*time_dim*class_dim],
-                                    seq_lengths[i],
-                                    class_dim,
-                                    alphabet,
-									labels)); 	
-    }
-	// get decoding results
-    std::vector<std::vector<Output>> batch_results;
-    for (size_t i = 0; i < batch_size; ++i) {
-      batch_results.emplace_back(res[i].get());
-    }
-    return batch_results;
+  // enqueue the tasks of decoding
+  std::vector<std::future<std::vector<Output>>> res;
+  for (size_t i = 0; i < batch_size; ++i) {
+    res.emplace_back(pool.enqueue(kws_decoder,
+                                  &probs[i*time_dim*class_dim],
+                                  seq_lengths[i],
+                                  class_dim,
+                                  alphabet,
+                                  labels));
+  }
+  // get decoding results
+  std::vector<std::vector<Output>> batch_results;
+  for (size_t i = 0; i < batch_size; ++i) {
+    batch_results.emplace_back(res[i].get());
+  }
+  return batch_results;
 }
