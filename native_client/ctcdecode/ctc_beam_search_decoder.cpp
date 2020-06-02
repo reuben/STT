@@ -99,7 +99,7 @@ int DecoderState::kws_init(const Alphabet& alphabet,
                              labels_w_blanks,
                              s_inc,
                              e_inc);
-  int S = labels_w_blanks.size();
+  S = labels_w_blanks.size();
   prev_alphas.reserve(S);
   next_alphas.reserve(S);
   neginf = -std::numeric_limits<double>::infinity();
@@ -233,8 +233,8 @@ void DecoderState::kws_next(const double* probs,
 				const int T, 
 				const int alphabet_size)
 {   
-	int kws_start =  (((S /2) + repeats - T) < 0) ? 0 : 1,
-      kws_end = S > 1 ? 2 : 1;
+  kws_start =  (((S /2) + repeats - T) < 0) ? 0 : 1;
+  kws_end = S > 1 ? 2 : 1;
     for (int i = kws_start; i < kws_end; ++i) {
         if (i == 0) {
             prev_alphas[i] = std::log(1 - probs[labels_w_blanks[1]]);
