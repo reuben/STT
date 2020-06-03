@@ -58,8 +58,8 @@ void PrintHelp(const char* bin)
     "\t--extended\t\t\tOutput string from extended metadata\n"
     "\t--json\t\t\t\tExtended output, shows word timings as JSON\n"
     "\t--candidate_transcripts NUMBER\tNumber of candidate transcripts to include in output\n"
-    "\t--stream size\t\t\tRun in stream mode, output intermediate results\n"
-	"\t--key_word_spotter keyword \t\t\tRun run in keyword spotter mode \n"	
+    "\t--stream SIZE\t\t\tRun in stream mode, output intermediate results\n"
+	"\t--key_word_spotter KEYWORD\tRun in keyword spotter mode\n"
     "\t--help\t\t\t\tShow help\n"
     "\t--version\t\t\tPrint version and exits\n";
     char* version = DS_Version();
