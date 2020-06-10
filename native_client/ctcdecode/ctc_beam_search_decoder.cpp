@@ -13,37 +13,15 @@
 #include "path_trie.h"
 
 // helper function for kws_init
-int setup_labels(const std::vector<unsigned int>& labels,
+void setup_labels(const std::vector<unsigned int>& labels,
                  const int blank,
-                 std::vector<int>& labels_w_blanks,
-                 std::vector<int>& s_inc,
-                 std::vector<int>& e_inc) {
+                 std::vector<int>& labels_w_blanks) {
 
-  const int L = labels.size();
-  int repeats = 0;
-  s_inc.push_back(1);
-  for (int i = 1; i < L; ++i) {
-    if (labels[i-1] == labels[i]) {
-      s_inc.push_back(1);
-      s_inc.push_back(1);
-      e_inc.push_back(1);
-      e_inc.push_back(1);
-      ++repeats;
-    }
-    else {
-      s_inc.push_back(2);
-      e_inc.push_back(2);
-    }
-  }
-  e_inc.push_back(1);
-
-  for (int i = 0; i < L; ++i) {
+  for (int i = 0; i < labels.size(); ++i) {
     labels_w_blanks.push_back(blank);
     labels_w_blanks.push_back(labels[i]);
   }
   labels_w_blanks.push_back(blank);
-
-  return repeats;
 }
 
 static const float neginf = -std::numeric_limits<float>::infinity();
@@ -96,15 +74,13 @@ DecoderState::init(const Alphabet& alphabet,
 int DecoderState::kws_init(const Alphabet& alphabet,
                            const char* labels)
 {
+  assert(strlen(labels) > 0); // empty keyword is not supported
+  abs_time_step_ = 0;
   blank_id_ = alphabet.GetSize();
-  repeats = setup_labels(alphabet.StringToLabels(labels),
-                         blank_id_,
-                         labels_w_blanks,
-                         s_inc,
-                         e_inc);
+  setup_labels(alphabet.StringToLabels(labels), blank_id_, labels_w_blanks);
   S = labels_w_blanks.size();
-  prev_alphas.resize(S, neginf);
-  next_alphas.reserve(S);
+  alphas.resize(S, neginf);
+
   return 0;
 }
 
@@ -232,55 +208,48 @@ DecoderState::next(const double *probs,
 
 void DecoderState::kws_next(const double* probs,
                             const int T,
-                            const int alphabet_size)
+                            const int class_dim)
 {
-  kws_start = (((S/2) + repeats - T) < 0) ? 0 : 1;
-  kws_end = S > 1 ? 2 : 1;
-  for (int i = kws_start; i < kws_end; ++i) {
-      if (i == 0) {
-          prev_alphas[i] = std::log(1 - probs[labels_w_blanks[1]]);
-      } else {
-          prev_alphas[i] = std::log(probs[labels_w_blanks[i]]);
-      }
+  int time_start = 0;
+  if (abs_time_step_ == 0) {
+    alphas[0] = std::log(1 - probs[labels_w_blanks[1]]);
+    alphas[1] = std::log(probs[labels_w_blanks[1]]);
+    time_start = 1;
   }
-  for(int t = 1; t < T; ++t) {
-    const double *prob = &probs[t * alphabet_size];
 
-    next_alphas.resize(S, neginf);
+  std::vector<float> next_alphas;
+  next_alphas.resize(S, neginf);
 
-    int remain = (S / 2) + repeats - (T - t);
-    if(remain >= 0)
-      kws_start += s_inc[remain];
-    if(t <= (S / 2) + repeats)
-      kws_end += e_inc[t - 1];
-    int startloop = kws_start;
+  for(int t = time_start; t < T; ++t, ++abs_time_step_) {
+    const double *prob = &probs[t * class_dim];
+    std::fill(next_alphas.begin(), next_alphas.end(), neginf);
 
-    if (kws_start == 0) {
-      float star_score = std::log(1 - prob[labels_w_blanks[1]]);
-      next_alphas[0] = prev_alphas[0] + star_score;
-      startloop += 1;
-    }
+    for(int s = 0; s < S; ++s) {
+      const int l = labels_w_blanks[s];
 
-    kws_end = std::min<int>(kws_end, labels_w_blanks.size());
-
-    for(int i = startloop; i < kws_end; ++i) {
-      int l = labels_w_blanks[i];
-      float prev_sum = log_add(prev_alphas[i], prev_alphas[i-1]);
-
-      // Skip two if not on blank and not on repeat.
-      if (l != blank_id_ && i != 1 &&
-          l != labels_w_blanks[i-2])
-        prev_sum = log_add(prev_sum, prev_alphas[i-2]);
-
-      next_alphas[i] = prev_sum;
-      if (i == labels_w_blanks.size() - 1) {
-        float nl_score = prob[labels_w_blanks[i-1]];
-        next_alphas[i] += std::log(1 - nl_score);
+      float p;
+      if (s == 0) {
+        p = std::log(1 - prob[labels_w_blanks[1]]);
+      } else if (s == (S - 1)) {
+        p = std::log(1 - prob[labels_w_blanks[S-2]]);
       } else {
-        next_alphas[i] += std::log(prob[l]);
+        p = std::log(prob[l]);
+      }
+
+      if (s > 1 && l != blank_id_ && l != labels_w_blanks[s-2]) {
+        next_alphas[s] = log_add(alphas[s], alphas[s-1]);
+        next_alphas[s] = log_add(next_alphas[s], alphas[s-2]);
+        next_alphas[s] += p;
+      } else if (s > 0) {
+        next_alphas[s] = log_add(alphas[s], alphas[s-1]);
+        next_alphas[s] += p;
+      } else {
+        next_alphas[s] = alphas[s];
+        next_alphas[s] += p;
       }
     }
-    std::swap(prev_alphas, next_alphas);
+
+    std::swap(alphas, next_alphas);
   }
 }
 
@@ -341,15 +310,10 @@ DecoderState::decode(size_t num_results) const
 
 std::vector<Output> DecoderState::kws_decode(size_t num_results) const
 {
-  assert(kws_end > kws_start);
-  std::vector<Output> outputs;
-  outputs.reserve(num_results);
-  float loglike = neginf;
-  for(int i = kws_start; i < kws_end; ++i) {
-    loglike = log_add(loglike, prev_alphas[i]);
-  }
   Output output;
-  output.confidence = -loglike;
+  output.confidence = log_add(alphas[S-2], alphas[S-1]);
+
+  std::vector<Output> outputs;
   outputs.push_back(output);
   return outputs;
 }

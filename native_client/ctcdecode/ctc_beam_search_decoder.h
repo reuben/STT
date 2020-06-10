@@ -22,14 +22,8 @@ class DecoderState {
   std::vector<PathTrie*> prefixes_;
   std::unique_ptr<PathTrie> prefix_root_;
   std::vector<int> labels_w_blanks;
-  std::vector<int> e_inc;
-  std::vector<int> s_inc;
-  std::vector<float> prev_alphas;
-  std::vector<float> next_alphas;
+  std::vector<float> alphas;
   int S;
-  int kws_start;
-  int kws_end;
-  int repeats;
 public:
   DecoderState() = default;
   ~DecoderState() = default;
