@@ -13,11 +13,12 @@
 #include "path_trie.h"
 
 // helper function for kws_init
-int setup_labels(const std::vector<int>& labels,
-                 const int blank_id_,
+int setup_labels(const std::vector<unsigned int>& labels,
+                 const int blank,
                  std::vector<int>& labels_w_blanks,
                  std::vector<int>& s_inc,
                  std::vector<int>& e_inc) {
+
   const int L = labels.size();
   int repeats = 0;
   s_inc.push_back(1);
@@ -37,16 +38,18 @@ int setup_labels(const std::vector<int>& labels,
   e_inc.push_back(1);
 
   for (int i = 0; i < L; ++i) {
-    labels_w_blanks.push_back(blank_id_);
+    labels_w_blanks.push_back(blank);
     labels_w_blanks.push_back(labels[i]);
   }
-  labels_w_blanks.push_back(blank_id_);
+  labels_w_blanks.push_back(blank);
 
   return repeats;
 }
 
+static const float neginf = -std::numeric_limits<float>::infinity();
+
 // helper function for kws_next
-double log_add(double a, double b, double neginf) {
+inline float log_add(float a, float b) {
   if (a == neginf) return b;
   if (b == neginf) return a;
   if (a > b)
@@ -91,19 +94,17 @@ DecoderState::init(const Alphabet& alphabet,
 }
 
 int DecoderState::kws_init(const Alphabet& alphabet,
-                           const std::vector<int>& labels)
+                           const char* labels)
 {
   blank_id_ = alphabet.GetSize();
-  repeats = setup_labels(labels,
-                             blank_id_,
-                             labels_w_blanks,
-                             s_inc,
-                             e_inc);
+  repeats = setup_labels(alphabet.StringToLabels(labels),
+                         blank_id_,
+                         labels_w_blanks,
+                         s_inc,
+                         e_inc);
   S = labels_w_blanks.size();
-  prev_alphas.reserve(S);
+  prev_alphas.resize(S, neginf);
   next_alphas.reserve(S);
-  neginf = -std::numeric_limits<double>::infinity();
-  std::fill(prev_alphas.begin(), prev_alphas.begin() + S, neginf);
   return 0;
 }
 
@@ -230,21 +231,22 @@ DecoderState::next(const double *probs,
 }
 
 void DecoderState::kws_next(const double* probs,
-                const int T,
-                const int alphabet_size)
+                            const int T,
+                            const int alphabet_size)
 {
-  kws_start =  (((S /2) + repeats - T) < 0) ? 0 : 1;
+  kws_start = (((S/2) + repeats - T) < 0) ? 0 : 1;
   kws_end = S > 1 ? 2 : 1;
   for (int i = kws_start; i < kws_end; ++i) {
       if (i == 0) {
           prev_alphas[i] = std::log(1 - probs[labels_w_blanks[1]]);
       } else {
-          int l = labels_w_blanks[i];
-          prev_alphas[i] = std::log(probs[l]);
+          prev_alphas[i] = std::log(probs[labels_w_blanks[i]]);
       }
   }
   for(int t = 1; t < T; ++t) {
-    std::fill(next_alphas.begin(), next_alphas.begin() + S, neginf);
+    const double *prob = &probs[t * alphabet_size];
+
+    next_alphas.resize(S, neginf);
 
     int remain = (S / 2) + repeats - (T - t);
     if(remain >= 0)
@@ -252,29 +254,30 @@ void DecoderState::kws_next(const double* probs,
     if(t <= (S / 2) + repeats)
       kws_end += e_inc[t - 1];
     int startloop = kws_start;
-    int idx = t * alphabet_size;
 
     if (kws_start == 0) {
-      double star_score = std::log(1 - probs[idx + labels_w_blanks[1]]);
+      float star_score = std::log(1 - prob[labels_w_blanks[1]]);
       next_alphas[0] = prev_alphas[0] + star_score;
       startloop += 1;
     }
 
+    kws_end = std::min<int>(kws_end, labels_w_blanks.size());
+
     for(int i = startloop; i < kws_end; ++i) {
       int l = labels_w_blanks[i];
-      double prev_sum = log_add(prev_alphas[i], prev_alphas[i-1], neginf);
+      float prev_sum = log_add(prev_alphas[i], prev_alphas[i-1]);
 
       // Skip two if not on blank and not on repeat.
       if (l != blank_id_ && i != 1 &&
           l != labels_w_blanks[i-2])
-        prev_sum = log_add(prev_sum, prev_alphas[i-2], neginf);
+        prev_sum = log_add(prev_sum, prev_alphas[i-2]);
 
       next_alphas[i] = prev_sum;
       if (i == labels_w_blanks.size() - 1) {
-        double nl_score = probs[idx + labels_w_blanks[i-1]];
+        float nl_score = prob[labels_w_blanks[i-1]];
         next_alphas[i] += std::log(1 - nl_score);
       } else {
-        next_alphas[i] += std::log(probs[l + idx]);
+        next_alphas[i] += std::log(prob[l]);
       }
     }
     std::swap(prev_alphas, next_alphas);
@@ -320,7 +323,7 @@ DecoderState::decode(size_t num_results) const
   for (size_t i = 0; i < num_returned; ++i) {
     Output output;
     prefixes_copy[i]->get_path_vec(output.tokens, output.timesteps);
-    double approx_ctc = scores[prefixes_copy[i]];
+    float approx_ctc = scores[prefixes_copy[i]];
     if (ext_scorer_) {
       auto words = ext_scorer_->split_labels_into_scored_units(output.tokens);
       // remove term insertion weight
@@ -338,15 +341,16 @@ DecoderState::decode(size_t num_results) const
 
 std::vector<Output> DecoderState::kws_decode(size_t num_results) const
 {
+  assert(kws_end > kws_start);
   std::vector<Output> outputs;
   outputs.reserve(num_results);
-  double loglike = neginf;
+  float loglike = neginf;
   for(int i = kws_start; i < kws_end; ++i) {
-    Output output;
-    loglike = log_add(loglike, prev_alphas[i], neginf);
-    output.confidence = -loglike;
-    outputs.push_back(output);
+    loglike = log_add(loglike, prev_alphas[i]);
   }
+  Output output;
+  output.confidence = -loglike;
+  outputs.push_back(output);
   return outputs;
 }
 
@@ -371,7 +375,7 @@ std::vector<Output> kws_decoder(
     int time_dim,
     int class_dim,
     const Alphabet &alphabet,
-    const std::vector<int>& labels)
+    const char* labels)
 {
   DecoderState state;
   state.kws_init(alphabet, labels);
@@ -431,7 +435,7 @@ kws_decoder_batch(
     int seq_lengths_size,
     const Alphabet &alphabet,
     size_t num_processes,
-    const std::vector<int>& labels)
+    const char* labels)
 {
   VALID_CHECK_GT(num_processes, 0, "num_processes must be nonnegative!");
   VALID_CHECK_EQ(batch_size, seq_lengths_size, "must have one sequence length per batch element");

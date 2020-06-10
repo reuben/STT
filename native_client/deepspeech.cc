@@ -135,7 +135,6 @@ StreamingState::feedAudioContent(const short* buffer,
 char*
 StreamingState::intermediateDecode() const
 {
-   	
   return model_->decode(decoder_state_, keyword_spotter_mode);
 }
 
@@ -259,13 +258,13 @@ StreamingState::processBatch(const vector<float>& buf, unsigned int n_steps)
   // Convert logits to double
   vector<double> inputs(logits.begin(), logits.end());
   if(!keyword_spotter_mode) {
-	  decoder_state_.next(inputs.data(),
-						  n_frames,
-						  num_classes);
+    decoder_state_.next(inputs.data(),
+              n_frames,
+              num_classes);
   }else {
-  	  decoder_state_.kws_next(inputs.data(),
-						      n_frames,
-						      num_classes);
+      decoder_state_.kws_next(inputs.data(),
+                  n_frames,
+                  num_classes);
   }
 }
 
@@ -372,8 +371,8 @@ int DS_SetScorerAlphaBeta(ModelState* aCtx,
 int
 DS_CreateStream(ModelState* aCtx,
                 StreamingState** retval,
-			    bool keyword_spotter_mode,
-				const std::vector<int>& labels)
+                bool keyword_spotter_mode,
+                const char* labels)
 {
   *retval = nullptr;
 
@@ -394,14 +393,14 @@ DS_CreateStream(ModelState* aCtx,
   const int cutoff_top_n = 40;
   const double cutoff_prob = 1.0;
   if(!ctx->keyword_spotter_mode) {
-	  ctx->decoder_state_.init(aCtx->alphabet_,
-							   aCtx->beam_width_,
-							   cutoff_prob,
-							   cutoff_top_n,
-							   aCtx->scorer_);
+    ctx->decoder_state_.init(aCtx->alphabet_,
+                 aCtx->beam_width_,
+                 cutoff_prob,
+                 cutoff_top_n,
+                 aCtx->scorer_);
   }else {
-  	  ctx->decoder_state_.kws_init(aCtx->alphabet_,
-                                  labels);
+      ctx->decoder_state_.kws_init(aCtx->alphabet_,
+                                   labels);
   }
   *retval = ctx.release();
   return DS_ERR_OK;
@@ -449,8 +448,8 @@ StreamingState*
 CreateStreamAndFeedAudioContent(ModelState* aCtx,
                                 const short* aBuffer,
                                 unsigned int aBufferSize,
-							    bool keyword_spotter_mode,
-				                const std::vector<int>& labels)
+                                bool keyword_spotter_mode,
+                                const char* labels)
 {
   StreamingState* ctx;
   int status = DS_CreateStream(aCtx, &ctx, keyword_spotter_mode, labels);
@@ -465,8 +464,8 @@ char*
 DS_SpeechToText(ModelState* aCtx,
                 const short* aBuffer,
                 unsigned int aBufferSize,
-			    bool keyword_spotter_mode,
-				const std::vector<int>& labels)
+                bool keyword_spotter_mode,
+                const char* labels)
 {
   StreamingState* ctx = CreateStreamAndFeedAudioContent(aCtx, aBuffer, aBufferSize, keyword_spotter_mode, labels);
   return DS_FinishStream(ctx);
@@ -477,8 +476,8 @@ DS_SpeechToTextWithMetadata(ModelState* aCtx,
                             const short* aBuffer,
                             unsigned int aBufferSize,
                             unsigned int aNumResults,
-						    bool keyword_spotter_mode,
-				            const std::vector<int>& labels)
+                            bool keyword_spotter_mode,
+                            const char* labels)
 {
   StreamingState* ctx = CreateStreamAndFeedAudioContent(aCtx, aBuffer, aBufferSize, keyword_spotter_mode, labels);
   return DS_FinishStreamWithMetadata(ctx, aNumResults);

@@ -24,13 +24,12 @@ class DecoderState {
   std::vector<int> labels_w_blanks;
   std::vector<int> e_inc;
   std::vector<int> s_inc;
-  std::vector<double> prev_alphas;	
-  std::vector<double> next_alphas;	
-  int S;	
+  std::vector<float> prev_alphas;
+  std::vector<float> next_alphas;
+  int S;
   int kws_start;
-  int kws_end;	
-  double neginf;
-  int repeats;	
+  int kws_end;
+  int repeats;
 public:
   DecoderState() = default;
   ~DecoderState() = default;
@@ -57,10 +56,10 @@ public:
            double cutoff_prob,
            size_t cutoff_top_n,
            std::shared_ptr<Scorer> ext_scorer);
-	
+
    int kws_init(const Alphabet& alphabet,
-                const std::vector<int>& labels);
-   
+                const char* labels);
+
 
   /* Send data to the decoder
    *
@@ -73,10 +72,10 @@ public:
   void next(const double *probs,
             int time_dim,
             int class_dim);
-	
+
   void kws_next(const double* probs,
-				const int T, 
-				const int alphabet_size);
+                const int T,
+                const int alphabet_size);
 
   /* Get up to num_results transcriptions from current decoder state.
    *
@@ -88,8 +87,8 @@ public:
    *     in descending order.
   */
   std::vector<Output> decode(size_t num_results=1) const;
-  std::vector<Output> kws_decode(size_t num_results=1) const;	
-  	
+  std::vector<Output> kws_decode(size_t num_results=1) const;
+
 };
 
 
@@ -122,11 +121,11 @@ std::vector<Output> ctc_beam_search_decoder(
     std::shared_ptr<Scorer> ext_scorer);
 
 std::vector<Output> kws_decoder(
-	const double* probs,
+    const double* probs,
     int time_dim,
     int class_dim,
     const Alphabet &alphabet,
-    const std::vector<int>& labels);
+    const char* labels);
 
 /* CTC Beam Search Decoder for batch data
  * Parameters:
@@ -161,13 +160,13 @@ ctc_beam_search_decoder_batch(
 
 std::vector<std::vector<Output>>
 kws_decoder_batch(
-	const double* probs,
-	int batch_size,
+    const double* probs,
+    int batch_size,
     int time_dim,
     int class_dim,
-	const int* seq_lengths,
+    const int* seq_lengths,
     int seq_lengths_size,
     const Alphabet &alphabet,
-	size_t num_processes,
-    const std::vector<int>& labels);
+    size_t num_processes,
+    const char* labels);
 #endif  // CTC_BEAM_SEARCH_DECODER_H_

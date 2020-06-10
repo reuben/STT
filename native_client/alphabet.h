@@ -126,6 +126,15 @@ public:
     return word;
   }
 
+  std::vector<unsigned int> StringToLabels(const std::string& string) const {
+    std::vector<unsigned int> ret;
+    for (char c : string) {
+      std::string c_str(1, c);
+      ret.push_back(LabelFromString(c_str));
+    }
+    return ret;
+  }
+
 private:
   size_t size_;
   unsigned int space_label_;

@@ -191,8 +191,8 @@ DEEPSPEECH_EXPORT
 char* DS_SpeechToText(ModelState* aCtx,
                       const short* aBuffer,
                       unsigned int aBufferSize,
-					  bool keyword_spotter_mode,
-				      const std::vector<int>& labels);
+                      bool keyword_spotter_mode,
+                      const char* labels);
 
 /**
  * @brief Use the DeepSpeech model to convert speech to text and output results
@@ -216,8 +216,8 @@ Metadata* DS_SpeechToTextWithMetadata(ModelState* aCtx,
                                       const short* aBuffer,
                                       unsigned int aBufferSize,
                                       unsigned int aNumResults,
-									  bool keyword_spotter_mode,
-				                      const std::vector<int>& labels);
+                                      bool keyword_spotter_mode,
+                                      const char* labels);
 
 /**
  * @brief Create a new streaming inference state. The streaming state returned
@@ -235,8 +235,8 @@ Metadata* DS_SpeechToTextWithMetadata(ModelState* aCtx,
 DEEPSPEECH_EXPORT
 int DS_CreateStream(ModelState* aCtx,
                     StreamingState** retval,
-				    bool keyword_spotter_mode=false,
-				    const std::vector<int>& labels={});
+                    bool keyword_spotter_mode,
+                    const char* labels);
 
 /**
  * @brief Feed audio samples to an ongoing streaming inference.
