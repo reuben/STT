@@ -4,7 +4,7 @@ build:
     artifact_url: ${system.tensorflow.ios_arm64.url}
     artifact_namespace: ${system.tensorflow.ios_arm64.namespace}
   generic:
-    workerType: "ds-macos-heavy"
+    workerType: "ds-macos-heavy-b"
   system_config:
     >
       ${tensorflow.packages_macos.brew}
