@@ -71,8 +71,8 @@ system:
     url: 'https://community-tc.services.mozilla.com/api/index/v1/task/project.deepspeech.homebrew_builds.7/artifacts/public/homebrew_builds.tar.gz'
     namespace: 'project.deepspeech.homebrew_builds.7'
   homebrew_tests:
-    url: 'https://community-tc.services.mozilla.com/api/index/v1/task/project.deepspeech.homebrew_tests.8/artifacts/public/homebrew_tests.tar.gz'
-    namespace: 'project.deepspeech.homebrew_tests.8'
+    url: 'https://community-tc.services.mozilla.com/api/index/v1/task/project.deepspeech.homebrew_tests.9/artifacts/public/homebrew_tests.tar.gz'
+    namespace: 'project.deepspeech.homebrew_tests.9'
   android_cache:
     arm64_v8a:
       android_24:
