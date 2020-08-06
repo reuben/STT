@@ -36,7 +36,7 @@ really-clean: clean clean-npm-pack
 
 package.json: package.json.in
 	sed \
-		-e 's/$$(PROJECT_NAME)/$(PROJECT_NAME)/' \
+		-e 's`$$(PROJECT_NAME)`$(PROJECT_NAME)`' \
 		-e 's/$$(PROJECT_VERSION)/$(PROJECT_VERSION)/' \
 		package.json.in > package.json && cat package.json
 
