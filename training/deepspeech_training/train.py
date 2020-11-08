@@ -51,6 +51,18 @@ def variable_on_cpu(name, shape, initializer):
         var = tfv1.get_variable(name=name, shape=shape, initializer=initializer)
     return var
 
+def conv_sep_1d(x, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding='SAME'):
+    x = tf.compat.v1.layers.separable_conv1d(x, filters=out_channels,
+        kernel_size=kernel_size,
+        strides=stride,
+        depth_multiplier = 1,
+        padding=padding,
+        dilation_rate=dilation,
+        activation=None,
+        use_bias=False)
+    return x
+
+
 def conv_1d(x, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding='SAME', use_bias=False):
     conv_filt = variable_on_cpu('conv_filter', [kernel_size, in_channels, out_channels], tf.contrib.layers.xavier_initializer())
 
@@ -63,6 +75,8 @@ def conv_1d(x, in_channels, out_channels, kernel_size, stride=1, dilation=1, pad
     return x
 
 
+def batch_norm(x, is_training):
+    return tf.compat.v1.layers.batch_normalization(x, axis=-1, momentum=0.9, epsilon=1e-3, training=is_training)
 
 def get_same_padding(kernel_size, stride, dilation):
     if dilation > 1:
