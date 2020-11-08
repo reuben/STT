@@ -16,13 +16,11 @@ struct TFLiteModelState : public ModelState
   std::unique_ptr<tflite::FlatBufferModel> fbmodel_;
 
   int input_node_idx_;
-  int previous_state_c_idx_;
-  int previous_state_h_idx_;
+  int input_lengths_idx_;
   int input_samples_idx_;
 
   int logits_idx_;
-  int new_state_c_idx_;
-  int new_state_h_idx_;
+  int encoded_lengths_idx_;
   int mfccs_idx_;
 
   std::vector<int> acoustic_exec_plan_;
@@ -38,11 +36,8 @@ struct TFLiteModelState : public ModelState
 
   virtual void infer(const std::vector<float>& mfcc,
                      unsigned int n_frames,
-                     const std::vector<float>& previous_state_c,
-                     const std::vector<float>& previous_state_h,
                      std::vector<float>& logits_output,
-                     std::vector<float>& state_c_output,
-                     std::vector<float>& state_h_output) override;
+                     unsigned int& encoded_n_frames_output) override;
 
 private:
   int get_tensor_by_name(const std::vector<int>& list, const char* name);

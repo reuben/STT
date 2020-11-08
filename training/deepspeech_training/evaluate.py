@@ -44,17 +44,14 @@ def sparse_tuple_to_texts(sp_tuple, alphabet):
 
 
 def evaluate(test_csvs, create_model):
-    if FLAGS.scorer_path:
+    if FLAGS.scorer_path and not FLAGS.use_greedy_decoder:
         scorer = Scorer(FLAGS.lm_alpha, FLAGS.lm_beta,
                         FLAGS.scorer_path, Config.alphabet)
     else:
         scorer = None
 
-    test_sets = [create_dataset([csv],
-                                batch_size=FLAGS.test_batch_size,
-                                train_phase=False,
-                                reverse=FLAGS.reverse_test,
-                                limit=FLAGS.limit_test) for csv in test_csvs]
+    test_csvs = FLAGS.test_files.split(',')
+    test_sets = [create_dataset([csv], batch_size=FLAGS.test_batch_size, train_phase=False)[0] for csv in test_csvs]
     iterator = tfv1.data.Iterator.from_structure(tfv1.data.get_output_types(test_sets[0]),
                                                  tfv1.data.get_output_shapes(test_sets[0]),
                                                  output_classes=tfv1.data.get_output_classes(test_sets[0]))
@@ -62,18 +59,20 @@ def evaluate(test_csvs, create_model):
 
     batch_wav_filename, (batch_x, batch_x_len), batch_y = iterator.get_next()
 
-    # One rate per layer
-    no_dropout = [None] * 6
-    logits, _ = create_model(batch_x=batch_x,
-                             seq_length=batch_x_len,
-                             dropout=no_dropout)
-
-    # Transpose to batch major and apply softmax for decoder
-    transposed = tf.nn.softmax(tf.transpose(a=logits, perm=[1, 0, 2]))
+    with tf.variable_scope('model'):
+        logits, encoded_lens = create_model(batch_x, batch_x_len, is_training=False)
 
     loss = tfv1.nn.ctc_loss(labels=batch_y,
                             inputs=logits,
-                            sequence_length=batch_x_len)
+                            sequence_length=encoded_lens,
+                            time_major=False)
+
+    if FLAGS.use_greedy_decoder:
+        time_major = tf.transpose(logits, [1, 0, 2])
+        [decoded_tensor, *_], _ = tf.nn.ctc_greedy_decoder(logits, encoded_lens)
+    else:
+        # Apply softmax for CTC decoder
+        logits = tf.nn.softmax(logits)
 
     tfv1.train.get_or_create_global_step()
 
@@ -84,7 +83,11 @@ def evaluate(test_csvs, create_model):
         num_processes = 1
 
     with tfv1.Session(config=Config.session_config) as session:
-        load_graph_for_evaluation(session)
+        if FLAGS.load == 'auto':
+            method_order = ['best', 'last']
+        else:
+            method_order = [FLAGS.load]
+        load_or_init_graph(session, method_order)
 
         def run_test(init_op, dataset):
             wav_filenames = []
@@ -101,18 +104,28 @@ def evaluate(test_csvs, create_model):
             # Initialize iterator to the appropriate dataset
             session.run(init_op)
 
-            # First pass, compute losses and transposed logits for decoding
             while True:
-                try:
-                    batch_wav_filenames, batch_logits, batch_loss, batch_lengths, batch_transcripts = \
-                        session.run([batch_wav_filename, transposed, loss, batch_x_len, batch_y])
-                except tf.errors.OutOfRangeError:
-                    break
+                if FLAGS.use_greedy_decoder:
+                    try:
+                        batch_wav_filenames, batch_decoded, batch_loss, batch_transcripts = \
+                            session.run([batch_wav_filenames, decoded_tensor, loss, batch_y])
+                    except tf.errors.OutOfRangeError:
+                        break
 
-                decoded = ctc_beam_search_decoder_batch(batch_logits, batch_lengths, Config.alphabet, FLAGS.beam_width,
-                                                        num_processes=num_processes, scorer=scorer,
-                                                        cutoff_prob=FLAGS.cutoff_prob, cutoff_top_n=FLAGS.cutoff_top_n)
-                predictions.extend(d[0][1] for d in decoded)
+                    decoded = sparse_tensor_value_to_texts(batch_decoded, Config.alphabet)
+                else:
+                    try:
+                        batch_wav_filenames, batch_logits, batch_loss, batch_lengths, batch_transcripts = \
+                            session.run([batch_wav_filename, logits, loss, encoded_lens, batch_y])
+                    except tf.errors.OutOfRangeError:
+                        break
+
+                    decoded = ctc_beam_search_decoder_batch(batch_logits, batch_lengths, Config.alphabet, FLAGS.beam_width,
+                                                            num_processes=num_processes, scorer=scorer,
+                                                            cutoff_prob=FLAGS.cutoff_prob, cutoff_top_n=FLAGS.cutoff_top_n)
+                    decoded = [d[0][1] for d in decoded]
+
+                predictions.extend(decoded)
                 ground_truths.extend(sparse_tensor_value_to_texts(batch_transcripts, Config.alphabet))
                 wav_filenames.extend(wav_filename.decode('UTF-8') for wav_filename in batch_wav_filenames)
                 losses.extend(batch_loss)

@@ -16,7 +16,7 @@ from .augmentations import apply_sample_augmentations, apply_graph_augmentations
 from .audio import read_frames_from_file, vad_split, pcm_to_np, DEFAULT_FORMAT
 from .sample_collections import samples_from_sources
 from .helpers import remember_exception, MEGABYTE
-
+from util.logging import log_info
 
 def audio_to_features(audio, sample_rate, transcript=None, clock=0.0, train_phase=False, augmentations=None, sample_id=None):
     if train_phase:
@@ -41,6 +41,7 @@ def audio_to_features(audio, sample_rate, transcript=None, clock=0.0, train_phas
 
     features = contrib_audio.mfcc(spectrogram=spectrogram,
                                   sample_rate=sample_rate,
+                                  filterbank_channel_count=80,
                                   dct_coefficient_count=Config.n_input,
                                   upper_frequency_limit=FLAGS.audio_sample_rate / 2)
     features = tf.reshape(features, [-1, Config.n_input])
@@ -96,12 +97,11 @@ def create_dataset(sources,
                    process_ahead=None,
                    buffering=1 * MEGABYTE):
     epoch_counter = Counter()  # survives restarts of the dataset and its generator
-
+    samples = samples_from_sources(sources, buffering=buffering, labeled=True, reverse=reverse)
     def generate_values():
         epoch = epoch_counter['epoch']
         if train_phase:
             epoch_counter['epoch'] += 1
-        samples = samples_from_sources(sources, buffering=buffering, labeled=True, reverse=reverse)
         num_samples = len(samples)
         if limit > 0:
             num_samples = min(limit, num_samples)
@@ -141,10 +141,10 @@ def create_dataset(sources,
                               .map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE))
     if cache_path:
         dataset = dataset.cache(cache_path)
+    
     dataset = (dataset.window(batch_size, drop_remainder=train_phase).flat_map(batch_fn)
                       .prefetch(len(Config.available_devices)))
-    return dataset
-
+    return dataset, len(samples) // batch_size
 
 def split_audio_file(audio_path,
                      audio_format=DEFAULT_FORMAT,

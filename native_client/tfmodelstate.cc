@@ -135,12 +135,7 @@ TFModelState::init(const char* model_path)
     if (node.name() == "input_node") {
       const auto& shape = node.attr().at("shape").shape();
       n_steps_ = shape.dim(1).size();
-      n_context_ = (shape.dim(2).size()-1)/2;
-      n_features_ = shape.dim(3).size();
-      mfcc_feats_per_timestep_ = shape.dim(2).size() * shape.dim(3).size();
-    } else if (node.name() == "previous_state_c") {
-      const auto& shape = node.attr().at("shape").shape();
-      state_size_ = shape.dim(1).size();
+      n_features_ = shape.dim(2).size();
     } else if (node.name() == "logits_shape") {
       Tensor logits_shape = Tensor(DT_INT32, TensorShape({3}));
       if (!logits_shape.FromProto(node.attr().at("value").tensor())) {
@@ -160,10 +155,10 @@ TFModelState::init(const char* model_path)
     }
   }
 
-  if (n_context_ == -1 || n_features_ == -1) {
+  if (n_features_  == -1 || n_features_ == -1) {
     std::cerr << "Error: Could not infer input shape from model file. "
-              << "Make sure input_node is a 4D tensor with shape "
-              << "[batch_size=1, time, window_size, n_features]."
+              << "Make sure input_node is a 3D tensor with shape "
+              << "[batch_size=1, n_steps, n_features]."
               << std::endl;
     return DS_ERR_INVALID_SHAPE;
   }
@@ -201,18 +196,12 @@ copy_tensor_to_vector(const Tensor& tensor, vector<float>& vec, int num_elements
 void
 TFModelState::infer(const std::vector<float>& mfcc,
                     unsigned int n_frames,
-                    const std::vector<float>& previous_state_c,
-                    const std::vector<float>& previous_state_h,
                     vector<float>& logits_output,
-                    vector<float>& state_c_output,
-                    vector<float>& state_h_output)
+                    unsigned int& encoded_n_frames_output)
 {
   const size_t num_classes = alphabet_.GetSize() + 1; // +1 for blank
 
-  Tensor input = tensor_from_vector(mfcc, TensorShape({BATCH_SIZE, n_steps_, 2*n_context_+1, n_features_}));
-  Tensor previous_state_c_t = tensor_from_vector(previous_state_c, TensorShape({BATCH_SIZE, (long long)state_size_}));
-  Tensor previous_state_h_t = tensor_from_vector(previous_state_h, TensorShape({BATCH_SIZE, (long long)state_size_}));
-
+  Tensor input = tensor_from_vector(mfcc, TensorShape({BATCH_SIZE, n_steps_, n_features_}));CH_SIZE, (long long)state_size_}));
   Tensor input_lengths(DT_INT32, TensorShape({1}));
   input_lengths.scalar<int>()() = n_frames;
 
@@ -221,10 +210,8 @@ TFModelState::infer(const std::vector<float>& mfcc,
     {
      {"input_node", input},
      {"input_lengths", input_lengths},
-     {"previous_state_c", previous_state_c_t},
-     {"previous_state_h", previous_state_h_t}
     },
-    {"logits", "new_state_c", "new_state_h"},
+    {"logits", "model/encoded_lengths"},
     {},
     &outputs);
 
@@ -235,13 +222,7 @@ TFModelState::infer(const std::vector<float>& mfcc,
 
   copy_tensor_to_vector(outputs[0], logits_output, n_frames * BATCH_SIZE * num_classes);
 
-  state_c_output.clear();
-  state_c_output.reserve(state_size_);
-  copy_tensor_to_vector(outputs[1], state_c_output);
-
-  state_h_output.clear();
-  state_h_output.reserve(state_size_);
-  copy_tensor_to_vector(outputs[2], state_h_output);
+  encoded_n_frames_output = outputs[1].scalar<int>()();
 }
 
 void

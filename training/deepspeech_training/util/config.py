@@ -95,28 +95,17 @@ def initialize_globals():
     # doc/Geometry.md
 
     # Number of MFCC features
-    c.n_input = 26 # TODO: Determine this programmatically from the sample rate
-
-    # The number of frames in the context
-    c.n_context = 9 # TODO: Determine the optimal value using a validation data set
+    c.n_input = 64 # QuartzNet uses 64 but TF Mfcc fails to run
 
     # Number of units in hidden layers
     c.n_hidden = FLAGS.n_hidden
 
     c.n_hidden_1 = c.n_hidden
-
-    c.n_hidden_2 = c.n_hidden
-
-    c.n_hidden_5 = c.n_hidden
-
-    # LSTM cell state dimension
-    c.n_cell_dim = c.n_hidden
-
-    # The number of units in the third layer, which feeds in to the LSTM
-    c.n_hidden_3 = c.n_cell_dim
+    c.n_hidden_2 = c.n_hidden_1 * 2
+    c.n_hidden_3 = c.n_hidden_2 * 2
 
     # Units in the sixth layer = number of characters in the target language plus one
-    c.n_hidden_6 = c.alphabet.GetSize() + 1 # +1 for CTC blank label
+    c.n_hidden_out = c.alphabet.GetSize() + 1 # +1 for CTC blank label
 
     # Size of audio window in samples
     if (FLAGS.feature_win_len * FLAGS.audio_sample_rate) % 1000 != 0:

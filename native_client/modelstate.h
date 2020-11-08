@@ -20,13 +20,10 @@ struct ModelState {
   std::unordered_map<std::string, float> hot_words_;
   unsigned int beam_width_;
   unsigned int n_steps_;
-  unsigned int n_context_;
   unsigned int n_features_;
-  unsigned int mfcc_feats_per_timestep_;
   unsigned int sample_rate_;
   unsigned int audio_win_len_;
   unsigned int audio_win_step_;
-  unsigned int state_size_;
 
   ModelState();
   virtual ~ModelState();
@@ -42,16 +39,14 @@ struct ModelState {
    *
    * @param mfcc batch input data
    * @param n_frames number of timesteps in the data
+   * @param encoded_n_frames_output numbre of encoded frames
    *
    * @param[out] output_logits Where to store computed logits.
    */
   virtual void infer(const std::vector<float>& mfcc,
                      unsigned int n_frames,
-                     const std::vector<float>& previous_state_c,
-                     const std::vector<float>& previous_state_h,
                      std::vector<float>& logits_output,
-                     std::vector<float>& state_c_output,
-                     std::vector<float>& state_h_output) = 0;
+                     unsigned int& encoded_n_frames_output) = 0;
 
   /**
    * @brief Perform decoding of the logits, using basic CTC decoder or
