@@ -62,26 +62,15 @@ def audiofile_to_features(wav_filename, clock=0.0, train_phase=False, augmentati
                              sample_id=wav_filename)
 
 
-def entry_to_features(sample_id, audio, sample_rate, transcript, clock, train_phase=False, augmentations=None):
-    # https://bugs.python.org/issue32117
-    sparse_transcript = tf.SparseTensor(*transcript)
+def entry_to_features(sample_id, audio, sample_rate, transcript, transcript_len, clock, train_phase=False, augmentations=None):
     features, features_len = audio_to_features(audio,
                                                sample_rate,
-                                               transcript=sparse_transcript,
+                                               transcript=transcript,
                                                clock=clock,
                                                train_phase=train_phase,
                                                augmentations=augmentations,
                                                sample_id=sample_id)
-    return sample_id, features, features_len, sparse_transcript
-
-
-def to_sparse_tuple(sequence):
-    r"""Creates a sparse representention of ``sequence``.
-        Returns a tuple with (indices, values, shape)
-    """
-    indices = np.asarray(list(zip([0]*len(sequence), range(len(sequence)))), dtype=np.int64)
-    shape = np.asarray([1, len(sequence)], dtype=np.int64)
-    return indices, sequence, shape
+    return sample_id, features, features_len, transcript, transcript_len
 
 
 def create_dataset(sources,
@@ -115,29 +104,27 @@ def create_dataset(sources,
             if sample_index >= num_samples:
                 break
             clock = (epoch * num_samples + sample_index) / (epochs * num_samples) if train_phase and epochs > 0 else 0.0
+            # tf.print('epoch:', epoch, 'num_samples:', num_samples, 'sample_index:', sample_index, 'epochs:', epochs)
             transcript = text_to_char_array(sample.transcript, Config.alphabet, context=sample.sample_id)
-            transcript = to_sparse_tuple(transcript)
-            yield sample.sample_id, sample.audio, sample.audio_format.rate, transcript, clock
+            yield sample.sample_id, sample.audio, sample.audio_format.rate, transcript, len(transcript), clock
 
-    # Batching a dataset of 2D SparseTensors creates 3D batches, which fail
-    # when passed to tf.nn.ctc_loss, so we reshape them to remove the extra
-    # dimension here.
-    def sparse_reshape(sparse):
-        shape = sparse.dense_shape
-        return tf.sparse.reshape(sparse, [shape[0], shape[2]])
-
-    def batch_fn(sample_ids, features, features_len, transcripts):
-        features = tf.data.Dataset.zip((features, features_len))
-        features = features.padded_batch(batch_size, padded_shapes=([None, Config.n_input], []))
-        transcripts = transcripts.batch(batch_size).map(sparse_reshape)
+    def batch_fn(sample_ids, features, features_len, transcripts, transcripts_len):
         sample_ids = sample_ids.batch(batch_size)
-        return tf.data.Dataset.zip((sample_ids, features, transcripts))
+        features = features.padded_batch(batch_size, padded_shapes=(None, Config.n_input,))
+        features_len = features_len.batch(batch_size)
+        transcripts = transcripts.padded_batch(batch_size, padded_shapes=(None,))
+        transcripts_len = transcripts_len.batch(batch_size)
+        return tf.data.Dataset.zip((sample_ids, features, features_len, transcripts, transcripts_len))
 
     process_fn = partial(entry_to_features, train_phase=train_phase, augmentations=augmentations)
 
     dataset = (tf.data.Dataset.from_generator(remember_exception(generate_values, exception_box),
-                                              output_types=(tf.string, tf.float32, tf.int32,
-                                                            (tf.int64, tf.int32, tf.int64), tf.float64))
+                                              output_types=(tf.string,   # sample id
+                                                            tf.float32,  # audio
+                                                            tf.int32,    # sample rate
+                                                            tf.int64,    # transcript
+                                                            tf.int64,    # transcript len
+                                                            tf.float64)) # clock
                               .map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE))
     if cache_path:
         dataset = dataset.cache(cache_path)

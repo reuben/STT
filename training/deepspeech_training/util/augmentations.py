@@ -4,11 +4,13 @@ import re
 import math
 import random
 import numpy as np
+import tensorflow as tf
 
 from multiprocessing import Queue, Process
 from .audio import gain_db_to_ratio, max_dbfs, normalize_audio, AUDIO_TYPE_NP, AUDIO_TYPE_PCM, AUDIO_TYPE_OPUS
 from .helpers import LimitingPool, int_range, float_range, pick_value_from_range, tf_pick_value_from_range, MEGABYTE
 from .sample_collections import samples_from_source, unpack_maybe
+from .flags import FLAGS
 
 BUFFER_SIZE = 1 * MEGABYTE
 SPEC_PARSER = re.compile(r'^(?P<cls>[a-z_]+)(\[(?P<params>.*)\])?$')
@@ -41,7 +43,6 @@ class GraphAugmentation(Augmentation):
         raise NotImplementedError
 
     def apply_with_probability(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         rv = tf.random.stateless_uniform([], seed=(clock * tf.int32.min, clock * tf.int32.max))
         return tf.cond(tf.less(rv, self.probability),
                        lambda: self.apply(tensor, transcript=transcript, clock=clock),
@@ -53,7 +54,6 @@ class GraphAugmentation(Augmentation):
         return tensor
 
     def units_per_ms(self):
-        from .flags import FLAGS  # pylint: disable=import-outside-toplevel
         return FLAGS.audio_sample_rate / 1000.0 if self.domain == 'signal' else 1.0 / FLAGS.feature_win_step
 
 
@@ -208,10 +208,10 @@ def apply_sample_augmentations(samples,
                 sample_clock = clock + (final_clock - clock) * (sample_index / len(samples))
                 yield sample, sample_clock
 
-    assert 0.0 <= clock <= 1.0
-    if final_clock is not None:
-        assert 0.0 <= final_clock <= 1.0
-        assert clock <= final_clock
+    # assert 0.0 <= clock <= 1.0
+    # if final_clock is not None:
+    #     assert 0.0 <= final_clock <= 1.0
+    #     assert clock <= final_clock
     augmentations = [aug for aug in augmentations if isinstance(aug, SampleAugmentation)] if augmentations else []
     try:
         for augmentation in augmentations:
@@ -387,7 +387,6 @@ class Pitch(GraphAugmentation):
         self.pitch = float_range(pitch)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         original_shape = tf.shape(tensor)
         pitch = tf_pick_value_from_range(self.pitch, clock=clock)
         new_freq_size = tf.cast(tf.cast(original_shape[2], tf.float32) * pitch, tf.int32)
@@ -415,12 +414,11 @@ class Tempo(GraphAugmentation):
         self.max_time = float(max_time)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         factor = tf_pick_value_from_range(self.factor, clock=clock)
         original_shape = tf.shape(tensor)
         new_time_size = tf.cast(tf.cast(original_shape[1], tf.float32) / factor, tf.int32)
         if transcript is not None:
-            new_time_size = tf.math.maximum(new_time_size, tf.shape(transcript)[1])
+            new_time_size = tf.math.maximum(new_time_size, tf.shape(transcript)[0])
         if self.max_time > 0:
             new_time_size = tf.math.minimum(new_time_size, tf.cast(self.max_time * self.units_per_ms(), tf.int32))
         spectrogram_aug = tf.image.resize_bilinear(tf.expand_dims(tensor, -1), [new_time_size, original_shape[2]])
@@ -437,7 +435,6 @@ class Warp(GraphAugmentation):
         self.warp_f = float_range(wf)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         original_shape = tf.shape(tensor)
         size_t, size_f = original_shape[1], original_shape[2]
         seed = (clock * tf.int32.min, clock * tf.int32.max)
@@ -464,7 +461,6 @@ class FrequencyMask(GraphAugmentation):
         self.size = int_range(size)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         time_max = tf.shape(tensor)[1]
         freq_max = tf.shape(tensor)[2]
         n = tf_pick_value_from_range(self.n, clock=clock)
@@ -490,7 +486,6 @@ class TimeMask(GraphAugmentation):
         self.size = float_range(size)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         time_max = tf.shape(tensor)[0 if self.domain == 'signal' else 1]
         n = tf_pick_value_from_range(self.n, clock=clock)
 
@@ -519,7 +514,6 @@ class Dropout(GraphAugmentation):
         self.rate = float_range(rate)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         rate = tf_pick_value_from_range(self.rate, clock=clock)
         rate = tf.math.maximum(0.0, rate)
         factors = tf.random.stateless_uniform(tf.shape(tensor),
@@ -537,7 +531,6 @@ class Add(GraphAugmentation):
         self.stddev = float_range(stddev)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         stddev = tf_pick_value_from_range(self.stddev, clock=clock)
         seed = (clock * tf.int32.min, clock * tf.int32.max)
         return tensor + tf.random.stateless_normal(tf.shape(tensor), seed, mean=0.0, stddev=stddev)
@@ -550,7 +543,6 @@ class Multiply(GraphAugmentation):
         self.stddev = float_range(stddev)
 
     def apply(self, tensor, transcript=None, clock=0.0):
-        import tensorflow as tf  # pylint: disable=import-outside-toplevel
         stddev = tf_pick_value_from_range(self.stddev, clock=clock)
         seed = (clock * tf.int32.min, clock * tf.int32.max)
         return tensor * tf.random.stateless_normal(tf.shape(tensor), seed, mean=1.0, stddev=stddev)
