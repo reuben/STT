@@ -195,6 +195,8 @@ do_bazel_build()
   bazel ${BAZEL_OUTPUT_USER_ROOT} build \
     -s --explain bazel_monolithic.log --verbose_explanations --experimental_strict_action_env --workspace_status_command="bash native_client/bazel_workspace_status_cmd.sh" --config=monolithic -c ${_opt_or_dbg} ${BAZEL_BUILD_FLAGS} ${BAZEL_TARGETS}
 
+  ls -lh ${DS_ROOT_TASK}/DeepSpeech/ds/tensorflow/bazel-bin/native_client
+
   if [ "${_opt_or_dbg}" = "opt" ]; then
     if is_patched_bazel; then
       find ${DS_ROOT_TASK}/DeepSpeech/ds/tensorflow/bazel-out/ -iname "*.ckd" | tar -cf ${DS_ROOT_TASK}/DeepSpeech/bazel-ckd-ds.tar -T -
