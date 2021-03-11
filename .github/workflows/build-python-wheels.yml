@@ -6,58 +6,49 @@ defaults:
 jobs:
   build-tensorflow:
     runs-on: ubuntu-18.04
+    env:
+      DOCKER_BUILDKIT: 1
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
           submodules: 'recursive'
-      - run: pwd
-      - run: ls -lh
-      - run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-base-build || true
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-lib-build || true
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:pybase || true
+      - run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - run: >
-          docker build . -t tflite-lib-build-local --target tflite-lib-build -f ci_scripts/linux-python-wheels.dockerfile
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-lib-build
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-base-build
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:pybase
-      - run: >
-          docker build . -t tflite-base-build-local --target tflite-base-build -f ci_scripts/linux-python-wheels.dockerfile
-      - run: >
-          docker build . -t pybase-local --target pybase -f ci_scripts/linux-python-wheels.dockerfile
-      - run: >
-          docker tag pybase-local docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:pybase &&
-          docker tag tflite-base-build-local docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-base-build &&
-          docker tag tflite-lib-build-local docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-lib-build &&
-          docker push --all-tags docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels
-  build-py36-tf-wheel:
+          docker build . --build-arg BUILDKIT_INLINE_CACHE=1 --target tflite-lib-build -f ci_scripts/linux-python-wheels.dockerfile
+          -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
+          --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      - run: docker tag $(docker images --filter "label=tflite-base-build" --format '{{.ID}}') ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
+  build-pybase:
     runs-on: ubuntu-18.04
+    env:
+      DOCKER_BUILDKIT: 1
     needs: build-tensorflow
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          submodules: 'recursive'
-      - run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-base-build || true
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-lib-build || true
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:pybase || true
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:py36 || true
-      - run: docker pull docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:py36-artifact || true
+      - run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - run: >
-          docker build . -t py36-artifact-local --target py36-artifact -f ci_scripts/linux-python-wheels.dockerfile
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:py36-artifact
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:py36
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:pybase
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-lib-build
-          --cache-from=docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:tflite-base-build
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target pybase -f ci_scripts/linux-python-wheels.dockerfile
+          -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
+          --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
+  build-py36-tf-wheel:
+    runs-on: ubuntu-18.04
+    env:
+      DOCKER_BUILDKIT: 1
+    needs: build-pybase
+    steps:
+      - uses: actions/checkout@v2
+      - run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - run: >
-          docker build . -t py36-local --target py36 -f ci_scripts/linux-python-wheels.dockerfile
-      - run: >
-          docker tag py36-artifact-local docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:py36-artifact &&
-          docker tag py36-local docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels:py36 &&
-          docker push --all-tags docker.pkg.github.com/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')/cache-linux-py-wheels
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target py36-artifact -f ci_scripts/linux-python-wheels.dockerfile
+          -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact
+          --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      - run: docker tag $(docker images --filter "label=py36" --format '{{.ID}}') ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact
   # build-py37-tf-wheel:
   #   needs: build-tensorflow
   #   steps:
