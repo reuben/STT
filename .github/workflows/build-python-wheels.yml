@@ -21,27 +21,11 @@ jobs:
       - run: docker tag $(docker images --filter "label=tflite-base-build" --format '{{.ID}}') ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
       - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
       - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
-  build-pybase:
-    runs-on: ubuntu-18.04
-    env:
-      DOCKER_BUILDKIT: 1
-    needs: build-tensorflow
-    steps:
-      - uses: actions/checkout@v2
-      - run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - run: >
           docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target pybase -f ci_scripts/linux-python-wheels.dockerfile
           -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
           --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
       - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
-  build-py36-tf-wheel:
-    runs-on: ubuntu-18.04
-    env:
-      DOCKER_BUILDKIT: 1
-    needs: build-pybase
-    steps:
-      - uses: actions/checkout@v2
-      - run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - run: >
           docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target py36-artifact -f ci_scripts/linux-python-wheels.dockerfile
           -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact
