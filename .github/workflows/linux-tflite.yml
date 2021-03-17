@@ -1,0 +1,85 @@
+name: linux-tflite
+on: [push]
+defaults:
+  run:
+    shell: bash
+jobs:
+  build-tensorflow:
+    runs-on: ubuntu-18.04
+    env:
+      DOCKER_BUILDKIT: 1
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.CR_PAT }}
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-tflite.dockerfile
+          target: linux-tflite-base-build
+          cache-targets: '["linux-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-tflite.dockerfile
+          target: linux-tflite-lib-build
+          cache-targets: '["linux-tflite-lib-build", "linux-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-tflite.dockerfile
+          target: linux-pybase-tflite
+          cache-targets: '["linux-pybase-tflite", "linux-tflite-lib-build", "linux-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      - run: docker push ghcr.io/$GITHUB_ACTOR/linux-pybase-tflite
+      - run: docker push ghcr.io/$GITHUB_ACTOR/linux-tflite-lib-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/linux-tflite-base-build
+      # Let the container registry update the latest tags for the pushed images
+      - run: sleep 60
+  build-python-wheels:
+    needs: build-tensorflow
+    runs-on: ubuntu-18.04
+    env:
+      DOCKER_BUILDKIT: 1
+    strategy:
+      matrix:
+        pyver: ["py36", "py37", "py38", "py39"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.CR_PAT }}
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-tflite.dockerfile
+          target: linux-${{ matrix.pyver }}-tflite
+          cache-targets: '["linux-${{ matrix.pyver }}-tflite", "linux-pybase-tflite", "linux-tflite-lib-build", "linux-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-tflite.dockerfile
+          target: linux-${{ matrix.pyver }}-tflite-artifact
+          cache-targets: '["linux-${{ matrix.pyver }}-tflite-artifact", "linux-${{ matrix.pyver }}-tflite", "linux-pybase-tflite", "linux-tflite-lib-build", "linux-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-tflite.dockerfile
+          target: linux-${{ matrix.pyver }}-tflite-artifact
+          cache-targets: '["linux-${{ matrix.pyver }}-tflite-artifact", "linux-${{ matrix.pyver }}-tflite", "linux-pybase-tflite", "linux-tflite-lib-build", "linux-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+          extra-args: "--output wheels"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: linux-${{ matrix.pyver }}-tflite-wheel
+          path: wheels/*.whl
+      - run: docker push ghcr.io/$GITHUB_ACTOR/linux-${{ matrix.pyver }}-tflite
+      - run: docker push ghcr.io/$GITHUB_ACTOR/linux-${{ matrix.pyver }}-tflite-artifact

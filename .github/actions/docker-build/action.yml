@@ -6,15 +6,12 @@ inputs:
     required: false
     default: "Dockerfile"
   target:
-    description: "Target to build"
+    description: "Target to build (image is automatically tagged with base-url + target name)"
     required: true
   base-url:
     description: "Base URL to prepend tag and list of cache targets with"
     required: false
     default: ""
-  tag:
-    description: "Tag for the final image. Gets prepended with base-url if specified"
-    required: true
   cache-targets:
     description: "JSON list, list of cache targets to pass to docker build --cache-from. Gets appended to base-url to form final list of URLs."
     required: false
@@ -28,13 +25,13 @@ runs:
   steps:
     - run: >
         echo docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }}
-        -t ${{ inputs.base-url }}${{ inputs.tag }}
+        -t ${{ inputs.base-url }}${{ inputs.target }}
         --cache-from=${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
         ${{ inputs.extra-args }}
       shell: bash
     - run: >
         docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }}
-        -t ${{ inputs.base-url }}${{ inputs.tag }}
+        -t ${{ inputs.base-url }}${{ inputs.target }}
         --cache-from=${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
         ${{ inputs.extra-args }}
       shell: bash
