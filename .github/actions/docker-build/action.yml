@@ -26,10 +26,24 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - run: echo ${{ inputs.cache-targets }}
+      shell: bash
+    - run: echo ${{ fromJSON(inputs.cache-targets) }}
+      shell: bash
+    - run: echo ${{ inputs.base-url }}
+      shell: bash
+    - run: echo ${{ format(',{0}', inputs.base-url) }}
+      shell: bash
+    - run: echo ${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
+      shell: bash
+    - run: echo ${{ join(inputs.cache-targets, format(',{0}', inputs.base-url)) }}
+      shell: bash
+    - run: echo ${{ join(inputs.cache-targets, inputs.base-url) }}
+      shell: bash
     - run: >
         echo docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }}
         -t ${{ inputs.base-url }}${{ inputs.tag }}
-        --cache-from=${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
+        --cache-from=${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
         ${{ inputs.extra-args }}
       shell: bash
       env:
