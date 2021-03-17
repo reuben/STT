@@ -9,7 +9,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY tensorflow /code/tensorflow/
 WORKDIR /code/tensorflow/
 RUN echo "" | TF_ENABLE_XLA=0 TF_NEED_JEMALLOC=1 TF_NEED_OPENCL_SYCL=0 TF_NEED_MKL=0 TF_NEED_VERBS=0 TF_NEED_MPI=0 TF_NEED_IGNITE=0 TF_NEED_GDR=0 TF_NEED_NGRAPH=0 TF_DOWNLOAD_CLANG=0 TF_SET_ANDROID_WORKSPACE=0 TF_NEED_TENSORRT=0 TF_NEED_ROCM=0 TF_NEED_CUDA=0 ./configure
-RUN bazel build --experimental_convenience_symlinks=clean --verbose_failures --config=noaws --config=nogcp --config=nohdfs --config=nonccl --config=monolithic -c opt --copt=-O3 --copt="-D_GLIBCXX_USE_CXX11_ABI=0" --copt=-fvisibility=hidden //tensorflow:tensorflow_cc
+RUN bazel --host_jvm_args=-Xmx1g build --local_ram_resources=1000 --jobs=1 --experimental_convenience_symlinks=clean --verbose_failures --config=noaws --config=nogcp --config=nohdfs --config=nonccl --config=monolithic -c opt --copt=-O3 --copt="-D_GLIBCXX_USE_CXX11_ABI=0" --copt=-fvisibility=hidden //tensorflow:tensorflow_cc
 
 FROM linux-cpu-opt-base-build as linux-cpu-opt-lib-build
 COPY native_client /code/native_client/
