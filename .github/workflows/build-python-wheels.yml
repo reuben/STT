@@ -13,101 +13,101 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'recursive'
-      # - uses: ./.github/actions/docker-login
-      #   with:
-      #     user: $GITHUB_ACTOR
-      #     password: ${{ secrets.CR_PAT }}
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.CR_PAT }}
       - uses: ./.github/actions/docker-build
         with:
           dockerfile: ci_scripts/linux-python-wheels.dockerfile
           target: tflite-base-build
           tag: cache-linux-py-wheels-tflite-base-build
+          cache-targets: '["cache-linux-py-wheels-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-python-wheels.dockerfile
+          target: tflite-lib-build
+          tag: cache-linux-py-wheels-tflite-lib-build
           cache-targets: '["cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
           base-url: ghcr.io/$GITHUB_ACTOR/
-  #     - uses: ./.github/actions/docker-build
-  #       with:
-  #         dockerfile: ci_scripts/linux-python-wheels.dockerfile
-  #         target: tflite-lib-build
-  #         tag: cache-linux-py-wheels-tflite-lib-build
-  #         cache-targets: '["cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
-  #         base-url: ghcr.io/$GITHUB_ACTOR/
-  #     - uses: ./.github/actions/docker-build
-  #       with:
-  #         dockerfile: ci_scripts/linux-python-wheels.dockerfile
-  #         target: pybase
-  #         tag: cache-linux-py-wheels-pybase
-  #         cache-targets: '["cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
-  #         base-url: ghcr.io/$GITHUB_ACTOR/
-  #     # - run: >
-  #     #     docker build . --build-arg BUILDKIT_INLINE_CACHE=1 --target tflite-lib-build -f ci_scripts/linux-python-wheels.dockerfile
-  #     #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
-  #     #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-  #     # - run: >
-  #     #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target pybase -f ci_scripts/linux-python-wheels.dockerfile
-  #     #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
-  #     #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-  #     - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
-  #     - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
-  #     - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-  #     # Let the container registry update the latest tags for the pushed images
-  #     - run: sleep 60
-  # build-python-wheels:
-  #   needs: build-tensorflow
-  #   runs-on: ubuntu-18.04
-  #   env:
-  #     DOCKER_BUILDKIT: 1
-  #   strategy:
-  #     matrix:
-  #       pyver: ["py36", "py37", "py38", "py39"]
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         fetch-depth: 0
-  #         submodules: 'recursive'
-  #     - uses: ./.github/actions/docker-login
-  #       with:
-  #         user: $GITHUB_ACTOR
-  #         password: ${{ secrets.CR_PAT }}
-  #     - uses: ./.github/actions/docker-build
-  #       with:
-  #         dockerfile: ci_scripts/linux-python-wheels.dockerfile
-  #         target: ${{ matrix.pyver }}
-  #         tag: cache-linux-py-wheels-${{ matrix.pyver }}
-  #         cache-targets: '["cache-linux-py-wheels-${{ matrix.pyver }}", "cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
-  #         base-url: ghcr.io/$GITHUB_ACTOR/
-  #     - uses: ./.github/actions/docker-build
-  #       with:
-  #         dockerfile: ci_scripts/linux-python-wheels.dockerfile
-  #         target: ${{ matrix.pyver }}-artifact
-  #         tag: cache-linux-py-wheels-${{ matrix.pyver }}-artifact
-  #         cache-targets: '["cache-linux-py-wheels-${{ matrix.pyver }}-artifact", "cache-linux-py-wheels-${{ matrix.pyver }}", "cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
-  #         base-url: ghcr.io/$GITHUB_ACTOR/
-  #     # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
-  #     - uses: ./.github/actions/docker-build
-  #       with:
-  #         dockerfile: ci_scripts/linux-python-wheels.dockerfile
-  #         target: ${{ matrix.pyver }}-artifact
-  #         tag: cache-linux-py-wheels-${{ matrix.pyver }}-artifact
-  #         cache-targets: '["cache-linux-py-wheels-${{ matrix.pyver }}-artifact", "cache-linux-py-wheels-${{ matrix.pyver }}", "cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
-  #         base-url: ghcr.io/$GITHUB_ACTOR/
-  #         extra-args: "--output wheels"
-  #     # - run: >
-  #     #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ matrix.pyver }} -f ci_scripts/linux-python-wheels.dockerfile
-  #     #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}
-  #     #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }},ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-  #     # - run: >
-  #     #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ matrix.pyver }}-artifact -f ci_scripts/linux-python-wheels.dockerfile
-  #     #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact
-  #     #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }},ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-  #     # # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
-  #     # - run: >
-  #     #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ matrix.pyver }}-artifact -f ci_scripts/linux-python-wheels.dockerfile
-  #     #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact
-  #     #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }},ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-  #     #     --output wheels
-  #     - uses: actions/upload-artifact@v2
-  #       with:
-  #         name: ${{ matrix.pyver }}-wheel
-  #         path: wheels/*.whl
-  #     - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}
-  #     - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-python-wheels.dockerfile
+          target: pybase
+          tag: cache-linux-py-wheels-pybase
+          cache-targets: '["cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      # - run: >
+      #     docker build . --build-arg BUILDKIT_INLINE_CACHE=1 --target tflite-lib-build -f ci_scripts/linux-python-wheels.dockerfile
+      #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
+      #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      # - run: >
+      #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target pybase -f ci_scripts/linux-python-wheels.dockerfile
+      #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
+      #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      # Let the container registry update the latest tags for the pushed images
+      - run: sleep 60
+  build-python-wheels:
+    needs: build-tensorflow
+    runs-on: ubuntu-18.04
+    env:
+      DOCKER_BUILDKIT: 1
+    strategy:
+      matrix:
+        pyver: ["py36", "py37", "py38", "py39"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.CR_PAT }}
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-python-wheels.dockerfile
+          target: ${{ matrix.pyver }}
+          tag: cache-linux-py-wheels-${{ matrix.pyver }}
+          cache-targets: '["cache-linux-py-wheels-${{ matrix.pyver }}", "cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-python-wheels.dockerfile
+          target: ${{ matrix.pyver }}-artifact
+          tag: cache-linux-py-wheels-${{ matrix.pyver }}-artifact
+          cache-targets: '["cache-linux-py-wheels-${{ matrix.pyver }}-artifact", "cache-linux-py-wheels-${{ matrix.pyver }}", "cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+      # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-python-wheels.dockerfile
+          target: ${{ matrix.pyver }}-artifact
+          tag: cache-linux-py-wheels-${{ matrix.pyver }}-artifact
+          cache-targets: '["cache-linux-py-wheels-${{ matrix.pyver }}-artifact", "cache-linux-py-wheels-${{ matrix.pyver }}", "cache-linux-py-wheels-pybase", "cache-linux-py-wheels-tflite-lib-build", "cache-linux-py-wheels-tflite-base-build"]'
+          base-url: ghcr.io/$GITHUB_ACTOR/
+          extra-args: "--output wheels"
+      # - run: >
+      #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ matrix.pyver }} -f ci_scripts/linux-python-wheels.dockerfile
+      #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}
+      #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }},ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      # - run: >
+      #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ matrix.pyver }}-artifact -f ci_scripts/linux-python-wheels.dockerfile
+      #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact
+      #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }},ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      # # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
+      # - run: >
+      #     docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ matrix.pyver }}-artifact -f ci_scripts/linux-python-wheels.dockerfile
+      #     -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact
+      #     --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }},ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      #     --output wheels
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.pyver }}-wheel
+          path: wheels/*.whl
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-${{ matrix.pyver }}-artifact
