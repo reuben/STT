@@ -1,0 +1,36 @@
+name: "Log in to Docker registry"
+description: "Log in to Docker registry"
+inputs:
+  dockerfile:
+    description: "Path to Dockerfile to build"
+    required: false
+    default: "Dockerfile"
+  target:
+    description: "Target to build"
+    required: true
+  base-url:
+    description: "Base URL to prepend tag and list of cache targets with"
+    required: false
+    default: ""
+  tag:
+    description: "Tag for the final image. Gets prepended with base-url if specified"
+    required: true
+  cache-targets:
+    description: "JSON list, list of cache targets to pass to docker build --cache-from. Gets appended to base-url to form final list of URLs."
+    required: false
+    default: ""
+  extra-args:
+    description: "Extra arguments to docker build"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - run: >
+        echo docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }}
+        -t ${{ inputs.base-url }}${{ inputs.tag }}
+        --cache-from=${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
+        ${{ inputs.extra-args }}
+      shell: bash
+      env:
+        DOCKER_BUILDKIT: 1
