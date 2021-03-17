@@ -44,3 +44,39 @@ RUN make bindings TFDIR=/code/tensorflow
 FROM scratch as py36-artifact
 LABEL py36-artifact=1
 COPY --from=py36 /code/native_client/python/dist/deepspeech-*-cp36* /
+
+FROM pybase as py37
+ENV VIRTUAL_ENV=/tmp/cp37-cp37m-venv
+RUN /opt/python/cp37-cp37m/bin/python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install -U pip
+RUN pip install numpy==1.14.5
+ENV NUMPY_DEP_VERSION=">=1.14.5"
+RUN make bindings TFDIR=/code/tensorflow
+
+FROM scratch as py37-artifact
+COPY --from=py37 /code/native_client/python/dist/deepspeech-*-cp37* /
+
+FROM pybase as py38
+ENV VIRTUAL_ENV=/tmp/cp38-cp38-venv
+RUN /opt/python/cp38-cp38/bin/python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install -U pip
+RUN pip install numpy==1.17.3
+ENV NUMPY_DEP_VERSION=">=1.17.3"
+RUN make bindings TFDIR=/code/tensorflow
+
+FROM scratch as py38-artifact
+COPY --from=py38 /code/native_client/python/dist/deepspeech-*-cp38* /
+
+FROM pybase as py39
+ENV VIRTUAL_ENV=/tmp/cp39-cp39-venv
+RUN /opt/python/cp39-cp39/bin/python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install -U pip
+RUN pip install numpy==1.19.4
+ENV NUMPY_DEP_VERSION=">=1.19.4"
+RUN make bindings TFDIR=/code/tensorflow
+
+FROM scratch as py39-artifact
+COPY --from=py39 /code/native_client/python/dist/deepspeech-*-cp39* /
