@@ -26,37 +26,19 @@ jobs:
           docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target pybase -f ci_scripts/linux-python-wheels.dockerfile
           -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
           --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-      - run: >
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target py36 -f ci_scripts/linux-python-wheels.dockerfile
-          -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36
-          --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-      - run: >
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target py36-artifact -f ci_scripts/linux-python-wheels.dockerfile
-          -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact
-          --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-      # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
-      - run: >
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target py36-artifact -f ci_scripts/linux-python-wheels.dockerfile
-          -t ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact
-          --cache-from=ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build,ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-          --output wheels
-      - uses: actions/upload-artifact@v2
-        with:
-          name: py36-wheel
-          path: wheels/*.whl
-      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
-      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
       - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-pybase
-      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36
-      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-py36-artifact
-  build-other-python-vers:
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-lib-build
+      - run: docker push ghcr.io/$GITHUB_ACTOR/cache-linux-py-wheels-tflite-base-build
+      # Let the container registry update the latest tags for the pushed images
+      - run: sleep 60
+  build-python-wheels:
     needs: build-tensorflow
     runs-on: ubuntu-18.04
     env:
       DOCKER_BUILDKIT: 1
     strategy:
       matrix:
-        pyver: ["py37", "py38", "py39"]
+        pyver: ["py36", "py37", "py38", "py39"]
     steps:
       - uses: actions/checkout@v2
         with:
