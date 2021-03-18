@@ -1,0 +1,90 @@
+name: windows-tflite
+on: [push]
+defaults:
+  run:
+    shell: bash
+jobs:
+  build-tensorflow:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.CR_PAT }}
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+      - run: docker pull ghcr.io/$GITHUB_ACTOR/windows-tflite-base-build || true
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/windows-tflite.dockerfile
+          target: windows-tflite-base-build
+          base-url: ghcr.io/$GITHUB_ACTOR/
+          cache-targets: '["windows-tflite-base-build"]'
+      - run: docker push ghcr.io/$GITHUB_ACTOR/windows-tflite-base-build
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/windows-tflite.dockerfile
+          target: windows-tflite-base-build-2
+          base-url: ghcr.io/$GITHUB_ACTOR/
+  #     - uses: ./.github/actions/docker-build
+  #       with:
+  #         dockerfile: ci_scripts/windows-tflite.dockerfile
+  #         target: windows-tflite-lib-build
+  #         cache-targets: '["windows-tflite-lib-build", "windows-tflite-base-build"]'
+  #         base-url: ghcr.io/$GITHUB_ACTOR/
+  #     - uses: ./.github/actions/docker-build
+  #       with:
+  #         dockerfile: ci_scripts/windows-tflite.dockerfile
+  #         target: windows-pybase-tflite
+  #         cache-targets: '["windows-pybase-tflite", "windows-tflite-lib-build", "windows-tflite-base-build"]'
+  #         base-url: ghcr.io/$GITHUB_ACTOR/
+  #     - run: docker push ghcr.io/$GITHUB_ACTOR/windows-pybase-tflite
+  #     - run: docker push ghcr.io/$GITHUB_ACTOR/windows-tflite-lib-build
+  #     - run: docker push ghcr.io/$GITHUB_ACTOR/windows-tflite-base-build
+  #     # Let the container registry update the latest tags for the pushed images
+  #     - run: sleep 60
+  # build-python-wheels:
+  #   needs: build-tensorflow
+  #   runs-on: ubuntu-18.04
+  #   strategy:
+  #     matrix:
+  #       pyver: ["py36", "py37", "py38", "py39"]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 0
+  #         submodules: 'recursive'
+  #     - uses: ./.github/actions/docker-login
+  #       with:
+  #         user: $GITHUB_ACTOR
+  #         password: ${{ secrets.CR_PAT }}
+  #     - uses: ./.github/actions/docker-build
+  #       with:
+  #         dockerfile: ci_scripts/windows-tflite.dockerfile
+  #         target: windows-${{ matrix.pyver }}-tflite
+  #         cache-targets: '["windows-${{ matrix.pyver }}-tflite", "windows-pybase-tflite", "windows-tflite-lib-build", "windows-tflite-base-build"]'
+  #         base-url: ghcr.io/$GITHUB_ACTOR/
+  #     - uses: ./.github/actions/docker-build
+  #       with:
+  #         dockerfile: ci_scripts/windows-tflite.dockerfile
+  #         target: windows-${{ matrix.pyver }}-tflite-artifact
+  #         cache-targets: '["windows-${{ matrix.pyver }}-tflite-artifact", "windows-${{ matrix.pyver }}-tflite", "windows-pybase-tflite", "windows-tflite-lib-build", "windows-tflite-base-build"]'
+  #         base-url: ghcr.io/$GITHUB_ACTOR/
+  #     # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
+  #     - uses: ./.github/actions/docker-build
+  #       with:
+  #         dockerfile: ci_scripts/windows-tflite.dockerfile
+  #         target: windows-${{ matrix.pyver }}-tflite-artifact
+  #         cache-targets: '["windows-${{ matrix.pyver }}-tflite-artifact", "windows-${{ matrix.pyver }}-tflite", "windows-pybase-tflite", "windows-tflite-lib-build", "windows-tflite-base-build"]'
+  #         base-url: ghcr.io/$GITHUB_ACTOR/
+  #         extra-args: "--output wheels"
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         name: windows-${{ matrix.pyver }}-tflite-wheel
+  #         path: wheels/*.whl
+  #     - run: docker push ghcr.io/$GITHUB_ACTOR/windows-${{ matrix.pyver }}-tflite
+  #     - run: docker push ghcr.io/$GITHUB_ACTOR/windows-${{ matrix.pyver }}-tflite-artifact

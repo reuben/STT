@@ -14,5 +14,7 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - run: echo echo ${{ inputs.password }} "|" docker login ${{ inputs.registry }} -u ${{ inputs.user }} --password-stdin
+      shell: bash
     - run: echo ${{ inputs.password }} | docker login ${{ inputs.registry }} -u ${{ inputs.user }} --password-stdin
       shell: bash

@@ -15,25 +15,31 @@ inputs:
   cache-targets:
     description: "JSON list, list of cache targets to pass to docker build --cache-from. Gets appended to base-url to form final list of URLs."
     required: false
-    default: ""
+    default: "[]"
   extra-args:
     description: "Extra arguments to docker build"
     required: false
     default: ""
+  disable-cache:
+    description: "Do not specify --cache-from with cache-targets"
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
-    - run: >
-        echo docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }}
-        -t ${{ inputs.base-url }}${{ inputs.target }}
-        --cache-from=${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
-        ${{ inputs.extra-args }}
-      shell: bash
-    - run: >
-        docker build --build-arg BUILDKIT_INLINE_CACHE=1 . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }}
-        -t ${{ inputs.base-url }}${{ inputs.target }}
-        --cache-from=${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
+    - run: |
+        set -xe
+        if [[ ${{ inputs.disable-cache }} == "true" ]]; then
+          MAYBE_CACHE_FROM=""
+        else
+          MAYBE_CACHE_FROM="--cache-from=$(eval echo $CACHE_FROM_LINE)"
+        fi
+        docker build $MAYBE_BUILD_ARG . --target ${{ inputs.target }} -f ${{ inputs.dockerfile }} \
+        -t ${{ inputs.base-url }}${{ inputs.target }} \
+        $MAYBE_CACHE_FROM \
         ${{ inputs.extra-args }}
       shell: bash
       env:
-        DOCKER_BUILDKIT: 1
+        MAYBE_BUILD_ARG: ${{ runner.os == 'Linux' && '--build-arg BUILDKIT_INLINE_CACHE=1' || '' }}
+        RUNNER_OS: ${{ runner.os }}
+        CACHE_FROM_LINE: ${{ inputs.base-url }}${{ join(fromJSON(inputs.cache-targets), format(',{0}', inputs.base-url)) }}
