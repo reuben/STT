@@ -40,9 +40,6 @@ elif [ "${OS}" = "${TC_MSYS_VERSION}" ]; then
     export TASKCLUSTER_ARTIFACTS="$(cygpath ${TASKCLUSTER_ARTIFACTS})"
 
     export DS_ROOT_TASK=${TASKCLUSTER_TASK_DIR}
-    export BAZEL_VC='C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC'
-    export BAZEL_SH='C:\builds\tc-workdir\msys64\usr\bin\bash'
-    export TC_WIN_BUILD_PATH='C:\builds\tc-workdir\msys64\usr\bin;C:\Python36'
     export MSYS2_ARG_CONV_EXCL='//'
 
     mkdir -p ${TASKCLUSTER_TASK_DIR}/tmp/
@@ -120,7 +117,7 @@ export TF_NEED_ROCM=0
 export GCC_HOST_COMPILER_PATH=/usr/bin/gcc
 
 if [ "${OS}" = "${TC_MSYS_VERSION}" ]; then
-    export PYTHON_BIN_PATH=C:/Python36/python.exe
+    export PYTHON_BIN_PATH=C:/hostedtoolcache/windows/Python/3.6.8/x64/python.exe
 else
     if [ "${OS}" = "Linux" ]; then
         source /etc/os-release
@@ -186,15 +183,7 @@ fi
 BAZEL_IOS_ARM64_FLAGS="--config=ios_arm64 --define=runtime=tflite --copt=-DTFLITE_WITH_RUY_GEMV"
 BAZEL_IOS_X86_64_FLAGS="--config=ios_x86_64 --define=runtime=tflite --copt=-DTFLITE_WITH_RUY_GEMV"
 
-if [ "${OS}" = "${TC_MSYS_VERSION}" ]; then
-    # Somehow, even with Python being in the PATH, Bazel on windows struggles
-    # with '/usr/bin/env python' ...
-    #
-    # We also force TMP/TEMP otherwise Bazel will pick default Windows one
-    # under %USERPROFILE%\AppData\Local\Temp and with 8.3 file format convention
-    # it messes with cxx_builtin_include_directory
-    BAZEL_EXTRA_FLAGS="--action_env=PATH=${TC_WIN_BUILD_PATH} --action_env=TEMP=${TEMP} --action_env=TMP=${TMP}"
-else
+if [ "${OS}" != "${TC_MSYS_VERSION}" ]; then
     BAZEL_EXTRA_FLAGS="--config=noaws --config=nogcp --config=nohdfs --config=nonccl --copt=-fvisibility=hidden"
 fi
 
@@ -203,7 +192,7 @@ if [ "${OS}" = "Darwin" ]; then
 fi
 
 ### Define build targets that we will re-ues in sourcing scripts.
-BUILD_TARGET_LIB_CPP_API="//tensorflow:tensorflow_cc"
+BUILD_TARGET_LIB_CPP_API="//native_client:libdeepspeech.so"
 BUILD_TARGET_GRAPH_TRANSFORMS="//tensorflow/tools/graph_transforms:transform_graph"
 BUILD_TARGET_GRAPH_SUMMARIZE="//tensorflow/tools/graph_transforms:summarize_graph"
 BUILD_TARGET_GRAPH_BENCHMARK="//tensorflow/tools/benchmark:benchmark_model"

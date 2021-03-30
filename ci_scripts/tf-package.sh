@@ -45,7 +45,7 @@ fi;
 if [ "${OS}" = "${TC_MSYS_VERSION}" ]; then
     export PATH=$PATH:'/c/Program Files/7-Zip/'
     pushd ${DS_ROOT_TASK}
-        7z a '-xr!.\dls\' '-xr!.\tmp\' '-xr!.\msys64\' -snl -snh -so home.tar . | 7z a -si ${TASKCLUSTER_ARTIFACTS}/home.tar.xz
+        7z a '-xr!.\dls\' '-xr!.\tmp\' '-xr!.\msys64\' -snl -snh -so home.tar . | 7z a -si ${TASKCLUSTER_ARTIFACTS}/home.tar.gz
     popd
 else
     ${TAR} -C ${DS_ROOT_TASK} ${TAR_EXCLUDE} -cf - . | ${XZ} > ${TASKCLUSTER_ARTIFACTS}/home.tar.xz
