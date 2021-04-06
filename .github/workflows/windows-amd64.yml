@@ -280,6 +280,8 @@ jobs:
           /c/Program\ Files/7-Zip/7z.exe x home.tar.xz -so | /c/Program\ Files/7-Zip/7z.exe x -aoa -si -ttar -o`pwd`
           rm home.tar.xz
       - run: |
+          pacman --noconfirm -S git patch unzip tar make zip
+      - run: |
           git status
       - uses: ./.github/actions/host-build
         with:
