@@ -212,7 +212,7 @@ jobs:
       - id: get_cache_key
         uses: ./.github/actions/get_cache_key
         with:
-          extras: "3"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -248,7 +248,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ needs.tensorflow_opt-Windows.outputs.cache_key }}
-          path: ${{ github.workspace }}/artifacts/home.tar.gz
+          path: ${{ github.workspace }}/artifacts/home.tar.xz
         if: needs.tensorflow_opt-Windows.outputs.status == 'missing'
   build-lib_Windows:
     name: "Build libdeepspeech.so and deepspeech C++ binary"
@@ -277,8 +277,8 @@ jobs:
           download: true
         if: needs.tensorflow_opt-Windows.outputs.status == 'found'
       - run: |
-          /c/Program\ Files/7-Zip/7z.exe x home.tar.gz -so | /c/Program\ Files/7-Zip/7z.exe x -aoa -si -ttar -o`pwd`
-          rm home.tar.gz
+          /c/Program\ Files/7-Zip/7z.exe x home.tar.xz -so | /c/Program\ Files/7-Zip/7z.exe x -aoa -si -ttar -o`pwd`
+          rm home.tar.xz
       - run: |
           git status
       - uses: ./.github/actions/host-build
