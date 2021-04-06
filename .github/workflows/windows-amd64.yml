@@ -274,7 +274,7 @@ jobs:
           download: true
         if: needs.tensorflow_opt-Windows.outputs.status == 'found'
       - run: |
-          tar xzf home.tar.gz
+          /c/Program\ Files/7-Zip/7z.exe x home.tar.gz -so | /c/Program\ Files/7-Zip/7z.exe x -aoa -si -ttar -o`pwd`
           rm home.tar.gz
       - run: |
           git status
