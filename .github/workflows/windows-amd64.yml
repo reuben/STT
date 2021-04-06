@@ -8,6 +8,7 @@ env:
   TASKCLUSTER_TASK_DIR: ${{ github.workspace }}
   TASKCLUSTER_ARTIFACTS: ${{ github.workspace }}/artifacts
   PYTHON_BIN_PATH: C:/hostedtoolcache/windows/Python/3.6.8/x64/python.exe
+  TC_MSYS_VERSION: MINGW64_NT-10.0-17763
 jobs:
   swig_Windows:
     name: "Build SWIG for Windows"
@@ -224,8 +225,6 @@ jobs:
     defaults:
       run:
         shell: msys2 {0}
-    env:
-      TC_MSYS_VERSION: MINGW64_NT-10.0-17763
     steps:
       - run: true
         shell: bash
