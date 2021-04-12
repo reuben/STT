@@ -4,6 +4,7 @@ const AdmZip = require('adm-zip');
 const filesize = require('filesize');
 const pathname = require('path');
 const fs = require('fs');
+const { throttling } = require("@octokit/plugin-throttling");
 
 async function getGoodArtifacts(client, owner, repo, name) {
     const goodWorkflowArtifacts = await client.paginate(
@@ -57,8 +58,29 @@ async function main() {
     const path = core.getInput("path", { required: true });
     const name = core.getInput("name");
     const download = core.getInput("download");
-    const client = github.getOctokit(token)
+    const OctokitWithThrottling = github.plugin(throttling);
+    const client = new OctokitWithThrottling({
+        auth: token,
+        throttle: {
+            onRateLimit: (retryAfter, options) => {
+                octokit.log.warn(
+                    `Request quota exhausted for request ${options.method} ${options.url}`
+                );
 
+                // Retry twice after hitting a rate limit error, then give up
+                if (options.request.retryCount <= 2) {
+                    console.log(`Retrying after ${retryAfter} seconds!`);
+                    return true;
+                }
+            },
+            onAbuseLimit: (retryAfter, options) => {
+                // does not retry, only logs a warning
+                octokit.log.warn(
+                    `Abuse detected for request ${options.method} ${options.url}`
+                );
+            },
+        },
+    });
     console.log("==> Repo:", owner + "/" + repo);
 
     const goodArtifacts = await getGoodArtifacts(client, owner, repo, name);
