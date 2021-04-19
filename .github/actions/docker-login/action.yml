@@ -1,0 +1,20 @@
+name: "Log in to Docker registry"
+description: "Log in to Docker registry"
+inputs:
+  user:
+    description: "User name"
+    required: true
+  password:
+    description: "Password"
+    required: true
+  registry:
+    description: "Registry URL"
+    required: false
+    default: "ghcr.io"
+runs:
+  using: "composite"
+  steps:
+    - run: echo echo ${{ inputs.password }} "|" docker login ${{ inputs.registry }} -u ${{ inputs.user }} --password-stdin
+      shell: bash
+    - run: echo ${{ inputs.password }} | docker login ${{ inputs.registry }} -u ${{ inputs.user }} --password-stdin
+      shell: bash

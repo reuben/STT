@@ -1,0 +1,98 @@
+name: linux-cpu-opt
+on: [push]
+defaults:
+  run:
+    shell: bash
+env:
+  DOCKER_BUILDKIT: 1
+jobs:
+  build-tensorflow:
+    runs-on: ubuntu-20.04
+    outputs:
+      image_list: ${{ steps.image_list.outputs.image_list }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-cpu-opt-base-build
+          base-url: ghcr.io/${{ github.actor }}/
+          cache-targets-var: LINUX_CPU_OPT_IMAGES
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-cpu-opt-lib-build
+          base-url: ghcr.io/${{ github.actor }}/
+          cache-targets-var: LINUX_CPU_OPT_IMAGES
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-cpu-opt-lib-build-artifact
+          base-url: ghcr.io/${{ github.actor }}/
+          cache-targets-var: LINUX_CPU_OPT_IMAGES
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-cpu-opt-pybase-cpu-opt
+          base-url: ghcr.io/${{ github.actor }}/
+          cache-targets-var: LINUX_CPU_OPT_IMAGES
+      - name: Export list of images as step output
+        id: image_list
+        run: |
+          set -ex
+          echo "::set-output name=image_list::$LINUX_CPU_OPT_IMAGES"
+  build-python-wheels:
+    needs: build-tensorflow
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        pyver: ["py36", "py37", "py38", "py39"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - name: Restore image list from TF build job and pull current images
+        run: |
+          set -ex
+          list="${{ needs.build-tensorflow.outputs.image_list}}"
+          echo "LINUX_CPU_OPT_IMAGES=$list" >> $GITHUB_ENV
+          for image in $(python -c 'import sys; print(" ".join(sys.argv[1].split(",")))' $list); do
+            docker pull ghcr.io/$GITHUB_ACTOR/$image
+          done
+      - uses: ./.github/actions/docker-login
+        with:
+          user: $GITHUB_ACTOR
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-${{ matrix.pyver }}-cpu-opt
+          base-url: ghcr.io/${{ github.actor }}/
+          cache-targets-var: LINUX_CPU_OPT_IMAGES
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-${{ matrix.pyver }}-cpu-opt-artifact
+          base-url: ghcr.io/${{ github.actor }}/
+          cache-targets-var: LINUX_CPU_OPT_IMAGES
+      # Repeat with --output because it disables tagging of the resulting image and we want to have it tagged and uploaded
+      - uses: ./.github/actions/docker-build
+        with:
+          dockerfile: ci_scripts/linux-cpu-opt.dockerfile
+          target: linux-${{ matrix.pyver }}-cpu-opt-artifact
+          base-url: ghcr.io/${{ github.actor }}/
+          add-to-cache-targets: false
+          push: false
+          extra-args: "--output wheels"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: linux-${{ matrix.pyver }}-cpu-opt-wheel
+          path: wheels/*.whl

@@ -1,0 +1,64 @@
+name: "Log in to Docker registry"
+description: "Log in to Docker registry"
+inputs:
+  dockerfile:
+    description: "Path to Dockerfile to build"
+    required: false
+    default: "Dockerfile"
+  target:
+    description: "Target to build (image is automatically tagged with base-url + target name)"
+    required: true
+  base-url:
+    description: "Base URL to prepend tag and list of cache targets with"
+    required: false
+    default: ""
+  cache-targets-var:
+    description: "Environment variable name where images shall be accumulated for multi-stage builds"
+    required: false
+    default: "IMAGES"
+  add-to-cache-targets:
+    description: "Whether to add built image to cache-targets-var"
+    required: false
+    default: true
+  extra-args:
+    description: "Extra arguments to docker build"
+    required: false
+    default: ""
+  push:
+    description: "Whether to push image after building"
+    required: false
+    default: true
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        set -xe
+        image=${{ inputs.base-url }}${{ inputs.target }}
+        echo "Building image: $image"
+        # Access environment variable named according to input, note the double $
+        cache_targets=${!CACHE_TARGETS_VAR}
+        echo "Cache targets: $cache_targets"
+        # Add currently built image to it
+        cache_targets=${cache_targets:+${cache_targets},}$image
+        echo "Updated cache targets: $cache_targets"
+
+        docker pull $image || true
+        docker build . \
+          -f ${{ inputs.dockerfile }} \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --target ${{ inputs.target }} \
+          -t $image \
+          $(python -c "$CACHE_FROM_FMT" "$cache_targets") \
+          ${{ inputs.extra-args }}
+        if [ ${{ inputs.push }} = "true" ]; then
+          docker push $image
+        fi
+        if [ ${{ inputs.add-to-cache-targets }} = "true" ]; then
+          echo "${{ inputs.cache-targets-var }}=$cache_targets" >> $GITHUB_ENV
+        fi
+      shell: bash
+      env:
+        DOCKER_BUILDKIT: 1
+        CACHE_TARGETS_VAR: ${{ inputs.cache-targets-var }}
+        # Inline Python snippet to format a list of targets (in `sys.argv[1]`) as multiple --cache-from strings for `docker build`
+        CACHE_FROM_FMT: import sys; import json; l = sys.argv[1].split(","); print(" ".join("--cache-from={}{}".format("${{ inputs.base-url }}", t) for t in reversed(l)))
