@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - moz-linux-ci
 env:
   # Shared variables
   CI_TASK_DIR: ${{ github.workspace }}
