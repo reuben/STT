@@ -1,5 +1,14 @@
 name: "Package lib"
 description: "Package of lib"
+inputs:
+  arch:
+    description: "Target arch for loading script (host/armv7/aarch64/android)"
+    required: false
+    default: "host"
+  flavor:
+    description: "Packaging flavor"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:

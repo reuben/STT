@@ -44,3 +44,18 @@ do_deepspeech_binary_build()
     EXTRA_LIBS="${EXTRA_LOCAL_LIBS}" \
     deepspeech${PLATFORM_EXE_SUFFIX}
 }
+
+do_deepspeech_ndk_build()
+{
+  arch_abi=$1
+
+  cd ${DS_DSDIR}/native_client/
+
+  ${ANDROID_NDK_HOME}/ndk-build \
+    APP_PLATFORM=android-21 \
+    APP_BUILD_SCRIPT=$(pwd)/Android.mk \
+    NDK_PROJECT_PATH=$(pwd) \
+    APP_STL=c++_shared \
+    TFDIR=${DS_TFDIR} \
+    TARGET_ARCH_ABI=${arch_abi}
+}

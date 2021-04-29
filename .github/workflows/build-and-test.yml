@@ -5,6 +5,12 @@ on:
     branches:
       - master
       - ci-android
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
 env:
   # Shared variables
   CI_TASK_DIR: ${{ github.workspace }}
@@ -2894,3 +2900,429 @@ jobs:
         run: |
           cat ${{ env.CI_TMP_DIR }}/xvfb.pid
           sudo kill -9 $(cat ${{ env.CI_TMP_DIR }}/xvfb.pid)
+
+  # Android jobs
+  build-lib-Android-amd64:
+    name: "AndroidAMD64|Build libdeepspeech+client"
+    runs-on: ubuntu-20.04
+    needs: [build-tensorflow-Android-arm64, tensorflow-opt-Android-arm64]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+      - run: |
+          echo ANDROID_SDK_HOME=/usr/local/lib/android/sdk >> $GITHUB_ENV
+          echo ANDROID_API_LEVEL=27 >> $GITHUB_ENV
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r18b
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
+          path: ${{ github.workspace }}/
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: ./.github/actions/check_artifact_exists
+        with:
+          name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
+          path: ${{ github.workspace }}/
+          download: true
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'found'
+      - run: |
+          tar --skip-old-files -xf ${{ github.workspace }}/home.tar.xz
+          rm ${{ github.workspace }}/home.tar.xz
+      - run: |
+          sudo apt-get install -y --no-install-recommends make build-essential gfortran git libblas-dev liblapack-dev libsox-dev libmagic-dev libgsm1-dev libltdl-dev libpng-dev python python-dev zlib1g-dev
+      - run: |
+          git status
+      - uses: ./.github/actions/host-build
+        with:
+          arch: android
+          flavor: x86_64
+      - uses: ./.github/actions/package
+        with:
+          arch: android
+          flavor: arm64-v8a
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "native_client.tflite.Android.AMD64.tar.xz"
+          path: ${{ github.workspace }}/artifacts/native_client.tar.xz
+
+  tensorflow-opt-Android-arm64:
+    name: "AndroidARM64|Check TensorFlow cache"
+    runs-on: ubuntu-20.04
+    outputs:
+      status: ${{ steps.check_artifact_exists.outputs.status }}
+      cache_key: ${{ steps.get_cache_key.outputs.key }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - id: get_cache_key
+        uses: ./.github/actions/get_cache_key
+        with:
+          extras: "9"
+      - id: check_artifact_exists
+        uses: ./.github/actions/check_artifact_exists
+        with:
+          name: ${{ steps.get_cache_key.outputs.key }}
+
+  build-tensorflow-Android-arm64:
+    name: "AndroidARM64|Build TensorFlow (opt)"
+    needs: tensorflow-opt-Android-arm64
+    runs-on: ubuntu-20.04
+    steps:
+      - run: true
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'found'
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - run: |
+          echo ANDROID_SDK_HOME=/usr/local/lib/android/sdk >> $GITHUB_ENV
+          echo ANDROID_API_LEVEL=27 >> $GITHUB_ENV
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r18b
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - run: |
+          echo ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }} >> $GITHUB_ENV
+          echo ANDROID_NDK_API_LEVEL=21 >> $GITHUB_ENV
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - run: |
+          sudo apt-get install -y --no-install-recommends pixz
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: ./.github/actions/setup-tensorflow
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: ./.github/actions/build-tensorflow
+        with:
+          flavor: "--android-arm64"
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: mxschmitt/action-tmate@master
+        if: failure() || needs.tensorflow-opt-Android-arm64.outputs.status == 'missing' && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled
+      - uses: ./.github/actions/package-tensorflow
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
+          path: ${{ github.workspace }}/artifacts/home.tar.xz
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+
+  build-lib-Android-arm64:
+    name: "AndroidARM64|Build libdeepspeech+client"
+    runs-on: ubuntu-20.04
+    needs: [build-tensorflow-Android-arm64, tensorflow-opt-Android-arm64]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+      - run: |
+          echo ANDROID_SDK_HOME=/usr/local/lib/android/sdk >> $GITHUB_ENV
+          echo ANDROID_API_LEVEL=27 >> $GITHUB_ENV
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r18b
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
+          path: ${{ github.workspace }}/
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
+      - uses: ./.github/actions/check_artifact_exists
+        with:
+          name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
+          path: ${{ github.workspace }}/
+          download: true
+        if: needs.tensorflow-opt-Android-arm64.outputs.status == 'found'
+      - run: |
+          tar --skip-old-files -xf ${{ github.workspace }}/home.tar.xz
+          rm ${{ github.workspace }}/home.tar.xz
+      - run: |
+          sudo apt-get install -y --no-install-recommends make build-essential gfortran git libblas-dev liblapack-dev libsox-dev libmagic-dev libgsm1-dev libltdl-dev libpng-dev python python-dev zlib1g-dev
+      - run: |
+          git status
+      - uses: ./.github/actions/host-build
+        with:
+          arch: android
+          flavor: arm64-v8a
+      - uses: ./.github/actions/package
+        with:
+          arch: android
+          flavor: arm64-v8a
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "native_client.tflite.Android.ARM64.tar.xz"
+          path: ${{ github.workspace }}/artifacts/native_client.tar.xz
+
+  tensorflow-opt-Android-armv7:
+    name: "AndroidARMv7|Check TensorFlow cache"
+    runs-on: ubuntu-20.04
+    outputs:
+      status: ${{ steps.check_artifact_exists.outputs.status }}
+      cache_key: ${{ steps.get_cache_key.outputs.key }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - id: get_cache_key
+        uses: ./.github/actions/get_cache_key
+        with:
+          extras: "9"
+      - id: check_artifact_exists
+        uses: ./.github/actions/check_artifact_exists
+        with:
+          name: ${{ steps.get_cache_key.outputs.key }}
+
+  build-tensorflow-Android-armv7:
+    name: "AndroidARMv7|Build TensorFlow (opt)"
+    needs: tensorflow-opt-Android-armv7
+    runs-on: ubuntu-20.04
+    steps:
+      - run: true
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'found'
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - run: |
+          echo ANDROID_SDK_HOME=/usr/local/lib/android/sdk >> $GITHUB_ENV
+          echo ANDROID_API_LEVEL=27 >> $GITHUB_ENV
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r18b
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - run: |
+          echo ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }} >> $GITHUB_ENV
+          echo ANDROID_NDK_API_LEVEL=21 >> $GITHUB_ENV
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - run: |
+          sudo apt-get install -y --no-install-recommends pixz
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - uses: ./.github/actions/setup-tensorflow
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - uses: ./.github/actions/build-tensorflow
+        with:
+          flavor: "--android-armv7"
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - uses: mxschmitt/action-tmate@master
+        if: failure() || needs.tensorflow-opt-Android-arm64.outputs.status == 'missing' && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled
+      - uses: ./.github/actions/package-tensorflow
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ needs.tensorflow-opt-Android-armv7.outputs.cache_key }}
+          path: ${{ github.workspace }}/artifacts/home.tar.xz
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+
+  build-lib-Android-armv7:
+    name: "AndroidARMv7|Build libdeepspeech+client"
+    runs-on: ubuntu-20.04
+    needs: [build-tensorflow-Android-armv7, tensorflow-opt-Android-armv7]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+      - run: |
+          echo ANDROID_SDK_HOME=/usr/local/lib/android/sdk >> $GITHUB_ENV
+          echo ANDROID_API_LEVEL=27 >> $GITHUB_ENV
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r18b
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.tensorflow-opt-Android-armv7.outputs.cache_key }}
+          path: ${{ github.workspace }}/
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
+      - uses: ./.github/actions/check_artifact_exists
+        with:
+          name: ${{ needs.tensorflow-opt-Android-armv7.outputs.cache_key }}
+          path: ${{ github.workspace }}/
+          download: true
+        if: needs.tensorflow-opt-Android-armv7.outputs.status == 'found'
+      - run: |
+          tar --skip-old-files -xf ${{ github.workspace }}/home.tar.xz
+          rm ${{ github.workspace }}/home.tar.xz
+      - run: |
+          sudo apt-get install -y --no-install-recommends make build-essential gfortran git libblas-dev liblapack-dev libsox-dev libmagic-dev libgsm1-dev libltdl-dev libpng-dev python python-dev zlib1g-dev
+      - run: |
+          git status
+      - uses: ./.github/actions/host-build
+        with:
+          arch: android
+          flavor: armeabi-v7a
+      - uses: ./.github/actions/package
+        with:
+          arch: android
+          flavor: armeabi-v7a
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "native_client.tflite.Android.ARMv7.tar.xz"
+          path: ${{ github.workspace }}/artifacts/native_client.tar.xz
+
+  build-apk-Android:
+    name: "Android|Build Java APK"
+    runs-on: ubuntu-20.04
+    needs: [build-lib-Android-arm64, build-lib-Android-armv7, build-lib-Android-amd64]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r18b
+      - uses: actions/download-artifact@v2
+        with:
+          name: native_client.tflite.Android.ARM64.tar.xz
+          path: ${{ github.workspace }}/
+      - run: |
+          mv native_client.tar.xz native_client.tflite.Android.ARM64.tar.xz
+      - uses: actions/download-artifact@v2
+        with:
+          name: native_client.tflite.Android.ARMv7.tar.xz
+          path: ${{ github.workspace }}/
+      - run: |
+          mv native_client.tar.xz native_client.tflite.Android.ARMv7.tar.xz
+      - uses: actions/download-artifact@v2
+        with:
+          name: native_client.tflite.Android.AMD64.tar.xz
+          path: ${{ github.workspace }}/
+      - run: |
+          mv native_client.tar.xz native_client.tflite.Android.AMD64.tar.xz
+      - run: |
+          mkdir -p native_client/java/libdeepspeech/libs/arm64-v8a
+          tar -C native_client/java/libdeepspeech/libs/arm64-v8a/ -Jxvf native_client.tflite.Android.ARM64.tar.xz libdeepspeech.so
+          mkdir -p native_client/java/libdeepspeech/libs/armeabi-v7a
+          tar -C native_client/java/libdeepspeech/libs/armeabi-v7a/ -Jxvf native_client.tflite.Android.ARMv7.tar.xz libdeepspeech.so
+          mkdir -p native_client/java/libdeepspeech/libs/x86_64
+          tar -C native_client/java/libdeepspeech/libs/x86_64/ -Jxvf native_client.tflite.Android.AMD64.tar.xz libdeepspeech.so
+      - run: |
+          make GRADLE="./gradlew " -C native_client/java/
+          make GRADLE="./gradlew " -C native_client/java/ maven-bundle
+      - uses: mxschmitt/action-tmate@master
+        if: failure() || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled)
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "test-app.apk"
+          path: ${{ github.workspace }}/native_client/java/app/build/outputs/apk/release/app*.apk
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "libdeepspeech.aar"
+          path: ${{ github.workspace }}/native_client/java/libdeepspeech/build/outputs/aar/libdeepspeech*.aar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "libdeepspeech.maven.zip"
+          path: ${{ github.workspace }}/native_client/java/libdeepspeech/build/libdeepspeech-*.maven.zip
+
+  test-cpp-Android-arm64:
+    name: "AndroidARM64|C++ client tests"
+    runs-on: ubuntu-20.04
+    needs: [build-lib-Android-arm64, train-test-model-Linux]
+    strategy:
+      matrix:
+        sdk-version: [android-24, android-25]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: "native_client.tflite.Android.ARM64.tar.xz"
+          path: ${{ env.CI_TMP_DIR }}/
+      - name: Extract Android native client files
+        run: |
+          cd ${{ env.CI_TMP_DIR }}/
+          mkdir ds && cd ds && tar xf ../native_client.tar.xz
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          arch: x86_64
+          profile: pixel
+          ndk: 18.1.5063045
+          script: ./ci_scripts/android-cpp-tests.sh arm64-v8a ${{ matrix.sdk-version }} 16k
+
+  test-cpp-Android-armv7:
+    name: "AndroidARMv7|C++ client tests"
+    runs-on: macos-10.15
+    needs: [build-lib-Android-armv7, train-test-model-Linux]
+    strategy:
+      matrix:
+        sdk-version: [android-24, android-25]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: "native_client.tflite.Android.ARMv7.tar.xz"
+          path: ${{ env.CI_TMP_DIR }}/
+      - name: Extract Android native client files
+        run: |
+          cd ${{ env.CI_TMP_DIR }}/
+          mkdir ds && cd ds && tar xf ../native_client.tar.xz
+      - uses: actions/download-artifact@v2
+        with:
+          name: "test-model.tflite-16k.zip"
+          path: ${{ env.CI_TMP_DIR }}/
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          arch: x86_64
+          profile: pixel
+          ndk: 18.1.5063045
+          script: ./ci_scripts/android-cpp-tests.sh armeabi-v7a ${{ matrix.sdk-version }} 16k
+
+  test-apk-Android:
+    name: "Android|APK tests"
+    runs-on: macos-10.15
+    needs: [build-apk-Android, train-test-model-Linux]
+    strategy:
+      matrix:
+        api-level: [24, 25, 26, 28, 29, 30]
+        system-image: [default, google_apis]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: native_client.tflite.Android.ARM64.tar.xz
+          path: ${{ github.workspace }}/
+      - run: |
+          mv native_client.tar.xz native_client.tflite.Android.ARM64.tar.xz
+      - uses: actions/download-artifact@v2
+        with:
+          name: native_client.tflite.Android.ARMv7.tar.xz
+          path: ${{ github.workspace }}/
+      - run: |
+          mv native_client.tar.xz native_client.tflite.Android.ARMv7.tar.xz
+      - uses: actions/download-artifact@v2
+        with:
+          name: native_client.tflite.Android.AMD64.tar.xz
+          path: ${{ github.workspace }}/
+      - run: |
+          mv native_client.tar.xz native_client.tflite.Android.AMD64.tar.xz
+      - run: |
+          mkdir -p native_client/java/libdeepspeech/libs/arm64
+          tar -C native_client/java/libdeepspeech/libs/arm64/ -Jxvf native_client.tflite.Android.ARM64.tar.xz libdeepspeech.so
+          mkdir -p native_client/java/libdeepspeech/libs/armv7
+          tar -C native_client/java/libdeepspeech/libs/armv7/ -Jxvf native_client.tflite.Android.ARMv7.tar.xz libdeepspeech.so
+          mkdir -p native_client/java/libdeepspeech/libs/x86_64
+          tar -C native_client/java/libdeepspeech/libs/x86_64/ -Jxvf native_client.tflite.Android.AMD64.tar.xz libdeepspeech.so
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.system-image }}
+          arch: x86_64
+          profile: pixel
+          ndk: 18.1.5063045
+          script: ./ci_scripts/android-apk-tests.sh x86_64 android-${{ matrix.api-level }} 16k

@@ -57,8 +57,6 @@ export DS_EXAMPLEDIR=${DS_ROOT_TASK}/examples
 export DS_VERSION="$(cat ${DS_DSDIR}/training/deepspeech_training/VERSION)"
 
 export GRADLE_USER_HOME=${DS_ROOT_TASK}/gradle-cache
-export ANDROID_SDK_HOME=${DS_ROOT_TASK}/DeepSpeech/Android/SDK/
-export ANDROID_NDK_HOME=${DS_ROOT_TASK}/DeepSpeech/Android/android-ndk-r18b/
 
 WGET=${WGET:-"wget"}
 TAR=${TAR:-"tar"}

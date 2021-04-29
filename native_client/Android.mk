@@ -10,5 +10,5 @@ LOCAL_CPP_EXTENSION    := .cc .cxx .cpp
 LOCAL_MODULE           := deepspeech
 LOCAL_SRC_FILES        := client.cc
 LOCAL_SHARED_LIBRARIES := deepspeech-prebuilt
-LOCAL_LDFLAGS          := -Wl,--no-as-needed
+LOCAL_LDFLAGS          := -Wl,--no-as-needed -fuse-ld=lld
 include $(BUILD_EXECUTABLE)
