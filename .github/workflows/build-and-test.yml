@@ -69,7 +69,7 @@ jobs:
       - run: |
           make install
         if: steps.swig-build-cache.outputs.cache-hit != 'true'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ github.job }}
           path: ${{ github.workspace }}/build-static/
@@ -111,7 +111,7 @@ jobs:
       - run: |
           make install
         if: steps.swig-build-cache.outputs.cache-hit != 'true'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ github.job }}
           path: ${{ github.workspace }}/build-static/
@@ -130,7 +130,7 @@ jobs:
       - run: |
           python --version
           pip --version
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -150,7 +150,7 @@ jobs:
           make -C native_client/ctcdecode/ \
             NUM_PROCESSES=$(nproc) \
             bindings
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "ds_ctcdecoder-Linux-test.whl"
           path: ${{ github.workspace }}/native_client/ctcdecode/dist/*.whl
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.6
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "ds_ctcdecoder-Linux-test.whl"
       - run: |
@@ -211,15 +211,15 @@ jobs:
           cp /tmp/train*/output_graph.* /tmp/checkpoint.tar.xz ${{ github.workspace }}/tmp/
       - run: |
           ls -hal /tmp/ ${{ github.workspace }}/tmp/
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-model.tf-${{ matrix.bitrate }}.zip"
           path: ${{ github.workspace }}/tmp/output_graph.pb*
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-model.tflite-${{ matrix.bitrate }}.zip"
           path: ${{ github.workspace }}/tmp/output_graph.tflite
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-checkpoint.${{ matrix.bitrate }}.zip"
           path: ${{ github.workspace }}/tmp/checkpoint.tar.xz
@@ -264,7 +264,7 @@ jobs:
         if: needs.tensorflow_opt-Linux.outputs.status == 'missing'
       - uses: ./.github/actions/package-tensorflow
         if: needs.tensorflow_opt-Linux.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-Linux.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -280,7 +280,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-Linux.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -302,11 +302,11 @@ jobs:
         with:
           flavor: ${{ matrix.build-flavor }}
       - uses: ./.github/actions/package
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Linux.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.${{ matrix.build-flavor }}.zip"
           path: ${{ github.workspace }}/artifacts/libdeepspeech.zip
@@ -322,7 +322,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Linux.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -331,7 +331,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -352,7 +352,7 @@ jobs:
           build_flavor: ${{ matrix.build-flavor }}
           numpy_build: "${{ steps.get_numpy.outputs.build_version }}"
           numpy_dep: "${{ steps.get_numpy.outputs.dep_version }}"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-Linux.whl"
           path: ${{ github.workspace }}/wheels/*.whl
@@ -367,7 +367,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Linux.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -376,7 +376,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -402,11 +402,11 @@ jobs:
         with:
           nodejs_versions: "10.0.0 11.0.0 12.7.0 13.0.0 14.0.0 15.0.0 16.0.0"
           electronjs_versions: "5.0.13 6.0.12 6.1.7 7.0.1 7.1.8 8.0.1 9.0.1 9.1.0 9.2.0 10.0.0 10.1.0 11.0.0 12.0.0"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Linux_amd64.tar.gz"
           path: ${{ github.workspace }}/native_client/javascript/wrapper.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-Linux.tgz"
           path: ${{ github.workspace }}/native_client/javascript/deepspeech-*.tgz
@@ -430,14 +430,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Linux.tar.xz"
           path: ${{ env.CI_TMP_DIR }}
       - run: |
           cd ${{ env.CI_TMP_DIR }}
           mkdir ds && cd ds && tar xf ../native_client.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -477,11 +477,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: |
           sudo apt-get install -y --no-install-recommends sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-Linux.whl"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -525,11 +525,11 @@ jobs:
           node-version: ${{ matrix.nodejs-version }}
       - run: |
           sudo apt-get install -y --no-install-recommends sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-Linux.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -580,11 +580,11 @@ jobs:
           node-version: 12
       - run: |
           sudo apt-get install -y --no-install-recommends sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-Linux.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -649,7 +649,7 @@ jobs:
       - run: |
           make install
         if: steps.swig-build-cache.outputs.cache-hit != 'true'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ github.job }}
           path: ${{ github.workspace }}/build-static/
@@ -668,7 +668,7 @@ jobs:
       - run: |
           python --version
           pip --version
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_macOS"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -688,7 +688,7 @@ jobs:
           make -C native_client/ctcdecode/ \
             NUM_PROCESSES=$(sysctl hw.ncpu |cut -d' ' -f2) \
             bindings
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "ds_ctcdecoder-macOS-test.whl"
           path: ${{ github.workspace }}/native_client/ctcdecode/dist/*.whl
@@ -709,7 +709,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.6
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "ds_ctcdecoder-macOS-test.whl"
       - run: |
@@ -749,15 +749,15 @@ jobs:
           cp /tmp/train*/output_graph.* /tmp/checkpoint.tar.xz ${{ github.workspace }}/tmp/
       - run: |
           ls -hal /tmp/ ${{ github.workspace }}/tmp/
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-model.tf-${{ matrix.bitrate }}.zip"
           path: ${{ github.workspace }}/tmp/output_graph.pb*
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-model.tflite-${{ matrix.bitrate }}.zip"
           path: ${{ github.workspace }}/tmp/output_graph.tflite
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-checkpoint.${{ matrix.bitrate }}.zip"
           path: ${{ github.workspace }}/tmp/checkpoint.tar.xz
@@ -803,7 +803,7 @@ jobs:
         if: needs.tensorflow_opt-macOS.outputs.status == 'missing'
       - uses: ./.github/actions/package-tensorflow
         if: needs.tensorflow_opt-macOS.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-macOS.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -819,7 +819,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-macOS.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -842,11 +842,11 @@ jobs:
         with:
           flavor: ${{ matrix.build-flavor }}
       - uses: ./.github/actions/package
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.macOS.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.${{ matrix.build-flavor }}.zip"
           path: ${{ github.workspace }}/artifacts/libdeepspeech.zip
@@ -862,7 +862,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.macOS.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -871,7 +871,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_macOS"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -896,7 +896,7 @@ jobs:
           build_flavor: ${{ matrix.build-flavor }}
           numpy_build: "${{ steps.get_numpy.outputs.build_version }}"
           numpy_dep: "${{ steps.get_numpy.outputs.dep_version }}"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-macOS.whl"
           path: ${{ github.workspace }}/wheels/*.whl
@@ -911,7 +911,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.macOS.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -920,7 +920,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_macOS"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -946,11 +946,11 @@ jobs:
         with:
           nodejs_versions: "10.0.0 11.0.0 12.7.0 13.0.0 14.0.0 15.0.0 16.0.0"
           electronjs_versions: "5.0.13 6.0.12 6.1.7 7.0.1 7.1.8 8.0.1 9.0.1 9.1.0 9.2.0 10.0.0 10.1.0 11.0.0 12.0.0"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-macOS_amd64.tar.gz"
           path: ${{ github.workspace }}/native_client/javascript/wrapper.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-macOS.tgz"
           path: ${{ github.workspace }}/native_client/javascript/deepspeech-*.tgz
@@ -974,14 +974,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.macOS.tar.xz"
           path: ${{ env.CI_TMP_DIR }}
       - run: |
           cd ${{ env.CI_TMP_DIR }}
           mkdir ds && cd ds && tar xf ../native_client.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1019,11 +1019,11 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-macOS.whl"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1065,11 +1065,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.nodejs-version }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-macOS.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1118,11 +1118,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 12
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-macOS.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1174,7 +1174,7 @@ jobs:
       - run: |
           python --version
           python -m pip --version
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Windows_crosscompiled"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -1191,7 +1191,7 @@ jobs:
           make -C native_client/ctcdecode/ \
             NUM_PROCESSES=$(nproc) \
             bindings
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "ds_ctcdecoder-windows-test.whl"
           path: ${{ github.workspace }}/native_client/ctcdecode/dist/*.whl
@@ -1255,7 +1255,7 @@ jobs:
         if: needs.tensorflow_opt-Windows.outputs.status == 'missing'
       - run: ./ci_scripts/tf-package.sh
         if: needs.tensorflow_opt-Windows.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-Windows.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -1286,7 +1286,7 @@ jobs:
             tar
             unzip
             zip
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-Windows.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -1304,11 +1304,11 @@ jobs:
           git status
       - run: ./ci_scripts/host-build.sh ${{ matrix.build-flavor }}
       - run: ./ci_scripts/package.sh
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Windows.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.${{ matrix.build-flavor }}.zip"
           path: ${{ github.workspace }}/artifacts/libdeepspeech.zip
@@ -1336,7 +1336,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Windows.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -1345,7 +1345,7 @@ jobs:
           "C:/Program Files/7-Zip/7z.exe" x native_client.tar.xz -so | "C:/Program Files/7-Zip/7z.exe" x -aoa -si -ttar -o`pwd`
           ls -hal
           popd
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Windows_crosscompiled"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -1370,7 +1370,7 @@ jobs:
           build_flavor: ${{ matrix.build-flavor }}
           numpy_build: "${{ steps.get_numpy.outputs.build_version }}"
           numpy_dep: "${{ steps.get_numpy.outputs.dep_version }}"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-Windows.whl"
           path: ${{ github.workspace }}/wheels/*.whl
@@ -1396,7 +1396,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Windows.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -1405,7 +1405,7 @@ jobs:
           "C:/Program Files/7-Zip/7z.exe" x native_client.tar.xz -so | "C:/Program Files/7-Zip/7z.exe" x -aoa -si -ttar -o`pwd`
           ls -hal
           popd
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Windows_crosscompiled"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -1432,11 +1432,11 @@ jobs:
         with:
           nodejs_versions: "10.0.0 11.0.0 12.7.0 13.0.0 14.0.0 15.0.0 16.0.0"
           electronjs_versions: "5.0.13 6.0.12 6.1.7 7.0.1 7.1.8 8.0.1 9.0.1 9.1.0 9.2.0 10.0.0 10.1.0 11.0.0 12.0.0"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Windows_amd64.tar.gz"
           path: ${{ github.workspace }}/native_client/javascript/wrapper.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-Windows.tgz"
           path: ${{ github.workspace }}/native_client/javascript/deepspeech-*.tgz
@@ -1464,7 +1464,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Download native_client.tar.xz
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.Windows.tar.xz"
           path: ${{ env.CI_TMP_DIR }}
@@ -1476,7 +1476,7 @@ jobs:
           ls -hal
           popd
       - name: Download trained test model
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-16k.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1524,11 +1524,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: ./.github/actions/win-install-sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-Windows.whl"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1579,11 +1579,11 @@ jobs:
         with:
           node-version: ${{ matrix.nodejs-version }}
       - uses: ./.github/actions/win-install-sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-Windows.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1644,11 +1644,11 @@ jobs:
         with:
           node-version: 12
       - uses: ./.github/actions/win-install-sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-Windows.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1693,24 +1693,24 @@ jobs:
       - run: |
           mkdir -p /tmp/nodewrapper-${{ matrix.build-flavor }}-macOS_amd64/
           mkdir -p /tmp/nodewrapper-${{ matrix.build-flavor }}-Windows_amd64/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-macOS_amd64.tar.gz"
           path: /tmp/nodewrapper-macOS_amd64/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Windows_amd64.tar.gz"
           path: /tmp/nodewrapper-Windows_amd64/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Linux_amd64.tar.gz"
           path: /tmp/nodewrapper-Linux_amd64/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Linux_armv7.tar.gz"
           path: /tmp/nodewrapper-Linux_armv7/
         if: matrix.build-flavor == 'tflite'
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Linux_aarch64.tar.gz"
           path: /tmp/nodewrapper-Linux_aarch64/
@@ -1731,7 +1731,7 @@ jobs:
             PROJECT_NAME="deepspeech-tflite"
           fi
           make -C native_client/javascript clean npm-pack PROJECT_NAME=$PROJECT_NAME
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ github.workspace }}/native_client/javascript/deepspeech-*.tgz
@@ -1762,11 +1762,11 @@ jobs:
           node-version: ${{ matrix.nodejs-version }}
       - run: |
           sudo apt-get install -y --no-install-recommends sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1817,11 +1817,11 @@ jobs:
           node-version: 12
       - run: |
           sudo apt-get install -y --no-install-recommends sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1872,11 +1872,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.nodejs-version }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1925,11 +1925,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 12
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -1990,11 +1990,11 @@ jobs:
         with:
           node-version: ${{ matrix.nodejs-version }}
       - uses: ./.github/actions/win-install-sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -2055,11 +2055,11 @@ jobs:
         with:
           node-version: 12
       - uses: ./.github/actions/win-install-sox
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}.tgz"
           path: ${{ env.CI_TMP_DIR }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}
@@ -2155,7 +2155,7 @@ jobs:
         if: needs.tensorflow_opt-LinuxArmv7.outputs.status == 'missing'
       - uses: ./.github/actions/package-tensorflow
         if: needs.tensorflow_opt-LinuxArmv7.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxArmv7.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -2183,7 +2183,7 @@ jobs:
         if: needs.tensorflow_opt-LinuxAarch64.outputs.status == 'missing'
       - uses: ./.github/actions/package-tensorflow
         if: needs.tensorflow_opt-LinuxAarch64.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxAarch64.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -2203,7 +2203,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxArmv7.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2228,11 +2228,11 @@ jobs:
           arch: ${{ matrix.arch }}
           flavor: ${{ matrix.build-flavor }}
       - uses: ./.github/actions/package
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.zip"
           path: ${{ github.workspace }}/artifacts/libdeepspeech.zip
@@ -2251,7 +2251,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxAarch64.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2276,11 +2276,11 @@ jobs:
           arch: ${{ matrix.arch }}
           flavor: ${{ matrix.build-flavor }}
       - uses: ./.github/actions/package
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.zip"
           path: ${{ github.workspace }}/artifacts/libdeepspeech.zip
@@ -2301,7 +2301,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -2310,7 +2310,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -2319,7 +2319,7 @@ jobs:
           ls -hal ${{ github.workspace }}/native_client/ds-swig/bin
           ln -s ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
           chmod +x ${{ github.workspace }}/native_client/ds-swig/bin/ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxArmv7.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2354,7 +2354,7 @@ jobs:
           numpy_dep: "${{ steps.get_numpy.outputs.dep_version }}"
           target: ${{ env.SYSTEM_TARGET }}
           chroot: ${{ env.SYSTEM_RASPBIAN }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-${{ matrix.arch }}.whl"
           path: ${{ github.workspace }}/wheels/*.whl
@@ -2373,7 +2373,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -2382,7 +2382,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -2391,7 +2391,7 @@ jobs:
           ls -hal ${{ github.workspace }}/native_client/ds-swig/bin
           ln -s ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
           chmod +x ${{ github.workspace }}/native_client/ds-swig/bin/ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxArmv7.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2431,11 +2431,11 @@ jobs:
           electronjs_versions: "5.0.13 6.0.12 6.1.7 7.0.1 7.1.8 8.0.1 9.0.1 9.1.0 9.2.0 10.0.0 10.1.0 11.0.0 12.0.0"
           target: ${{ env.SYSTEM_TARGET }}
           chroot: ${{ env.SYSTEM_RASPBIAN }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Linux_${{ matrix.arch }}.tar.gz"
           path: ${{ github.workspace }}/native_client/javascript/wrapper.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-${{ matrix.arch }}.tgz"
           path: ${{ github.workspace }}/native_client/javascript/deepspeech-*.tgz
@@ -2458,7 +2458,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -2467,7 +2467,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -2476,7 +2476,7 @@ jobs:
           ls -hal ${{ github.workspace }}/native_client/ds-swig/bin
           ln -s ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
           chmod +x ${{ github.workspace }}/native_client/ds-swig/bin/ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxAarch64.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2511,7 +2511,7 @@ jobs:
           numpy_dep: "${{ steps.get_numpy.outputs.dep_version }}"
           target: ${{ env.SYSTEM_TARGET }}
           chroot: ${{ env.SYSTEM_RASPBIAN }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-${{ matrix.arch }}.whl"
           path: ${{ github.workspace }}/wheels/*.whl
@@ -2530,7 +2530,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ github.workspace }}/tensorflow/bazel-bin/native_client/
@@ -2539,7 +2539,7 @@ jobs:
           tar xf native_client.tar.xz
           ls -hal
           cd ${{ github.workspace }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "swig_Linux"
           path: ${{ github.workspace }}/native_client/ds-swig/
@@ -2548,7 +2548,7 @@ jobs:
           ls -hal ${{ github.workspace }}/native_client/ds-swig/bin
           ln -s ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
           chmod +x ${{ github.workspace }}/native_client/ds-swig/bin/ds-swig ${{ github.workspace }}/native_client/ds-swig/bin/swig
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow_opt-LinuxAarch64.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2588,11 +2588,11 @@ jobs:
           electronjs_versions: "5.0.13 6.0.12 6.1.7 7.0.1 7.1.8 8.0.1 9.0.1 9.1.0 9.2.0 10.0.0 10.1.0 11.0.0 12.0.0"
           target: ${{ env.SYSTEM_TARGET }}
           chroot: ${{ env.SYSTEM_RASPBIAN }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "nodewrapper-${{ matrix.build-flavor }}-Linux_${{ matrix.arch }}.tar.gz"
           path: ${{ github.workspace }}/native_client/javascript/wrapper.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-${{ matrix.arch }}.tgz"
           path: ${{ github.workspace }}/native_client/javascript/deepspeech-*.tgz
@@ -2619,7 +2619,7 @@ jobs:
       - name: "Create a chroot tarball"
         run: |
           sudo tar -cf - -C ${{ env.SYSTEM_RASPBIAN }}/ --one-file-system . | xz -9 -T0 > ${{ github.workspace }}/chroot.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: chroot-${{ matrix.arch }}
           path: ${{ github.workspace }}/chroot.tar.xz
@@ -2650,7 +2650,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "chroot-${{ matrix.arch }}"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2658,14 +2658,14 @@ jobs:
           mkdir ${{ env.SYSTEM_RASPBIAN }}/
           sudo tar -xf ${{ env.CI_TMP_DIR }}/chroot.tar.xz -C ${{ env.SYSTEM_RASPBIAN }}/
           rm ${{ env.CI_TMP_DIR }}/chroot.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.${{ matrix.build-flavor }}.linux.${{ matrix.arch }}.tar.xz"
           path: ${{ env.CI_TMP_DIR }}/
       - run: |
           cd ${{ env.CI_TMP_DIR }}/
           mkdir ds && cd ds && tar xf ../native_client.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2715,7 +2715,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "chroot-${{ matrix.arch }}"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2723,11 +2723,11 @@ jobs:
           mkdir ${{ env.SYSTEM_RASPBIAN }}/
           sudo tar -xf ${{ env.CI_TMP_DIR }}/chroot.tar.xz -C ${{ env.SYSTEM_RASPBIAN }}/
           rm ${{ env.CI_TMP_DIR }}/chroot.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech-${{ matrix.build-flavor }}-${{ matrix.python-version }}-${{ matrix.arch }}.whl"
           path: ${{ env.CI_TMP_DIR }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2779,7 +2779,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "chroot-${{ matrix.arch }}"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2791,11 +2791,11 @@ jobs:
         uses: ./.github/actions/node-install
         with:
           node: ${{ matrix.nodejs-version }}
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-${{ matrix.arch }}.tgz"
           path: ${{ env.CI_TMP_DIR }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2846,7 +2846,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "chroot-${{ matrix.arch }}"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2858,11 +2858,11 @@ jobs:
         uses: ./.github/actions/node-install
         with:
           node: 12
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "deepspeech_intermediate-${{ matrix.build-flavor }}-${{ matrix.arch }}.tgz"
           path: ${{ env.CI_TMP_DIR }}/
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.${{ matrix.build-flavor }}-${{ matrix.bitrate }}.zip"
           path: ${{ env.CI_TMP_DIR }}/
@@ -2918,7 +2918,7 @@ jobs:
       - uses: nttld/setup-ndk@v1
         with:
           ndk-version: r18b
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -2944,7 +2944,7 @@ jobs:
         with:
           arch: android
           flavor: arm64-v8a
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.tflite.Android.AMD64.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
@@ -2962,7 +2962,7 @@ jobs:
       - id: get_cache_key
         uses: ./.github/actions/get_cache_key
         with:
-          extras: "9"
+          extras: "10"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3009,7 +3009,7 @@ jobs:
         if: failure() || needs.tensorflow-opt-Android-arm64.outputs.status == 'missing' && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled
       - uses: ./.github/actions/package-tensorflow
         if: needs.tensorflow-opt-Android-arm64.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -3031,7 +3031,7 @@ jobs:
       - uses: nttld/setup-ndk@v1
         with:
           ndk-version: r18b
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow-opt-Android-arm64.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -3057,7 +3057,7 @@ jobs:
         with:
           arch: android
           flavor: arm64-v8a
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.tflite.Android.ARM64.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
@@ -3075,7 +3075,7 @@ jobs:
       - id: get_cache_key
         uses: ./.github/actions/get_cache_key
         with:
-          extras: "9"
+          extras: "10"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3122,7 +3122,7 @@ jobs:
         if: failure() || needs.tensorflow-opt-Android-arm64.outputs.status == 'missing' && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled
       - uses: ./.github/actions/package-tensorflow
         if: needs.tensorflow-opt-Android-armv7.outputs.status == 'missing'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ needs.tensorflow-opt-Android-armv7.outputs.cache_key }}
           path: ${{ github.workspace }}/artifacts/home.tar.xz
@@ -3144,7 +3144,7 @@ jobs:
       - uses: nttld/setup-ndk@v1
         with:
           ndk-version: r18b
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: ${{ needs.tensorflow-opt-Android-armv7.outputs.cache_key }}
           path: ${{ github.workspace }}/
@@ -3170,7 +3170,7 @@ jobs:
         with:
           arch: android
           flavor: armeabi-v7a
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "native_client.tflite.Android.ARMv7.tar.xz"
           path: ${{ github.workspace }}/artifacts/native_client.tar.xz
@@ -3188,19 +3188,19 @@ jobs:
       - uses: nttld/setup-ndk@v1
         with:
           ndk-version: r18b
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: native_client.tflite.Android.ARM64.tar.xz
           path: ${{ github.workspace }}/
       - run: |
           mv native_client.tar.xz native_client.tflite.Android.ARM64.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: native_client.tflite.Android.ARMv7.tar.xz
           path: ${{ github.workspace }}/
       - run: |
           mv native_client.tar.xz native_client.tflite.Android.ARMv7.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: native_client.tflite.Android.AMD64.tar.xz
           path: ${{ github.workspace }}/
@@ -3218,15 +3218,15 @@ jobs:
           make GRADLE="./gradlew " -C native_client/java/ maven-bundle
       - uses: mxschmitt/action-tmate@master
         if: failure() || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled)
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "test-app.apk"
           path: ${{ github.workspace }}/native_client/java/app/build/outputs/apk/release/app*.apk
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.aar"
           path: ${{ github.workspace }}/native_client/java/libdeepspeech/build/outputs/aar/libdeepspeech*.aar
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: "libdeepspeech.maven.zip"
           path: ${{ github.workspace }}/native_client/java/libdeepspeech/build/libdeepspeech-*.maven.zip
@@ -3240,7 +3240,7 @@ jobs:
         sdk-version: [android-24, android-25]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.tflite.Android.ARM64.tar.xz"
           path: ${{ env.CI_TMP_DIR }}/
@@ -3264,7 +3264,7 @@ jobs:
         sdk-version: [android-24, android-25]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "native_client.tflite.Android.ARMv7.tar.xz"
           path: ${{ env.CI_TMP_DIR }}/
@@ -3272,7 +3272,7 @@ jobs:
         run: |
           cd ${{ env.CI_TMP_DIR }}/
           mkdir ds && cd ds && tar xf ../native_client.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: "test-model.tflite-16k.zip"
           path: ${{ env.CI_TMP_DIR }}/
@@ -3293,19 +3293,19 @@ jobs:
         system-image: [default, google_apis]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: native_client.tflite.Android.ARM64.tar.xz
           path: ${{ github.workspace }}/
       - run: |
           mv native_client.tar.xz native_client.tflite.Android.ARM64.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: native_client.tflite.Android.ARMv7.tar.xz
           path: ${{ github.workspace }}/
       - run: |
           mv native_client.tar.xz native_client.tflite.Android.ARMv7.tar.xz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v1
         with:
           name: native_client.tflite.Android.AMD64.tar.xz
           path: ${{ github.workspace }}/
