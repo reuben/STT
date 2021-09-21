@@ -80,6 +80,9 @@ package_native_client_ndk()
   ${TAR} --verbose -cf - \
     -C ${stt_dir}/native_client/libs/${arch_abi}/ stt \
     -C ${stt_dir}/native_client/libs/${arch_abi}/ libstt.so \
+    -C ${stt_dir}/native_client/libs/${arch_abi}/ libkenlm.so \
+    -C ${stt_dir}/native_client/libs/${arch_abi}/ libtensorflowlite.so \
+    -C ${stt_dir}/native_client/libs/${arch_abi}/ libtflitedelegates.so \
     -C ${tensorflow_dir}/bazel-bin/native_client/ generate_scorer_package \
     -C ${stt_dir}/native_client/libs/${arch_abi}/ libc++_shared.so \
     -C ${stt_dir}/native_client/ coqui-stt.h \
