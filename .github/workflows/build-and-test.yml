@@ -333,7 +333,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "Linux"
-          extras: "1"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -1522,7 +1522,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "macOS"
-          extras: "2"
+          extras: "3"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -1922,7 +1922,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "Windows"
-          extras: "2"
+          extras: "3"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -2706,7 +2706,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "LinuxArmv7"
-          extras: "1"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -2758,7 +2758,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "LinuxAarch64"
-          extras: "1"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3367,7 +3367,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "AndroidArmv7"
-          extras: "1"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3413,7 +3413,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "AndroidArm64"
-          extras: "1"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3459,7 +3459,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "AndroidArm64"
-          extras: "1"
+          extras: "2"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
