@@ -10,7 +10,7 @@ env:
   # Shared variables
   CI_TASK_DIR: ${{ github.workspace }}
   CI_ARTIFACTS_DIR: ${{ github.workspace }}/artifacts
-  EXPECTED_TENSORFLOW_VERSION: "TensorFlow: v2.8.0-4-ga604f547e75"
+  EXPECTED_TENSORFLOW_VERSION: "TensorFlow: v2.8.0-5-g0a77b72e379"
   STT_PROD_MODEL: https://github.com/coqui-ai/STT/releases/download/v0.10.0-alpha.7/output_graph.tflite
 
   # macOS specific
@@ -333,7 +333,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "Linux"
-          extras: "2"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -1522,7 +1522,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "macOS"
-          extras: "3"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -1922,7 +1922,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "Windows"
-          extras: "3"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -2706,7 +2706,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "LinuxArmv7"
-          extras: "2"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -2758,7 +2758,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "LinuxAarch64"
-          extras: "2"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3367,7 +3367,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "AndroidArmv7"
-          extras: "2"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3413,7 +3413,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "AndroidArm64"
-          extras: "2"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
@@ -3459,7 +3459,7 @@ jobs:
         uses: ./.github/actions/get_cache_key
         with:
           arch: "AndroidArm64"
-          extras: "2"
+          extras: "0"
       - id: check_artifact_exists
         uses: ./.github/actions/check_artifact_exists
         with:
