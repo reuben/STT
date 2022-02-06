@@ -364,6 +364,7 @@ jobs:
       - run: ./ci_scripts/host-build.sh
       - run: ./ci_scripts/package.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - uses: actions/upload-artifact@v2
         with:
           name: "native_client.tflite.Linux.tar.xz"
@@ -1553,6 +1554,7 @@ jobs:
       - run: ./ci_scripts/host-build.sh
       - run: ./ci_scripts/package.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - uses: actions/upload-artifact@v2
         with:
           name: "native_client.tflite.macOS.tar.xz"
@@ -1949,6 +1951,7 @@ jobs:
       - run: ./ci_scripts/host-build.sh
       - run: ./ci_scripts/package.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - uses: actions/upload-artifact@v2
         with:
           name: "native_client.tflite.Windows.tar.xz"
@@ -2728,6 +2731,7 @@ jobs:
       - run: ./ci_scripts/armv7-build.sh
       - run: ./ci_scripts/package.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - uses: actions/upload-artifact@v2
         with:
           name: "native_client.tflite.linux.armv7.tar.xz"
@@ -2784,6 +2788,7 @@ jobs:
       - run: ./ci_scripts/aarch64-build.sh
       - run: ./ci_scripts/package.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - uses: actions/upload-artifact@v2
         with:
           name: "native_client.tflite.linux.aarch64.tar.xz"
@@ -3391,6 +3396,7 @@ jobs:
       - run: ./ci_scripts/tf-configure.sh --android
       - run: ./ci_scripts/android-armv7-build.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - run: ./ci_scripts/android-package.sh armeabi-v7a
       - uses: actions/upload-artifact@v2
         with:
@@ -3437,6 +3443,7 @@ jobs:
       - run: ./ci_scripts/tf-configure.sh --android
       - run: ./ci_scripts/android-arm64-build.sh
       - run: ./ci_scripts/tf-package.sh
+        if: steps.get_cache_key.outputs.key == 'missing'
       - run: ./ci_scripts/android-package.sh arm64-v8a
       - uses: actions/upload-artifact@v2
         with:
