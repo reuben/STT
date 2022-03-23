@@ -27,7 +27,12 @@ namespace std {
     %template(FlashlightOutputVector) vector<FlashlightOutput>;
     %template(FlashlightOutputVectorVector) vector<vector<FlashlightOutput>>;
     %template(Map) unordered_map<string, float>;
+    %template(IntVector) vector<int>;
+    %template(PathTriePtrVector) vector<PathTrie*>;
 }
+
+%ignore DecoderState::timestep_tree_root_;
+%ignore DecoderState::prefix_root_;
 
 %shared_ptr(Scorer);
 
@@ -43,6 +48,7 @@ namespace std {
 %include "../alphabet.h"
 %include "output.h"
 %include "scorer.h"
+%include "path_trie.h"
 %include "ctc_beam_search_decoder.h"
 
 %constant const char* __version__ = ds_version();
