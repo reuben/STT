@@ -27,7 +27,6 @@ namespace std {
     %template(FlashlightOutputVector) vector<FlashlightOutput>;
     %template(FlashlightOutputVectorVector) vector<vector<FlashlightOutput>>;
     %template(Map) unordered_map<string, float>;
-    %template(IntVector) vector<int>;
     %template(PathTriePtrVector) vector<PathTrie*>;
 }
 

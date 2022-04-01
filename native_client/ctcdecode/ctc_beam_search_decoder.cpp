@@ -95,7 +95,7 @@ CTCDecoderForWav2vec2AM::init(const Alphabet& alphabet,
                               double cutoff_prob,
                               size_t cutoff_top_n,
                               int blank_id,
-                              const std::vector<int> ignored_symbols,
+                              const std::vector<unsigned int>& ignored_symbols,
                               std::shared_ptr<Scorer> ext_scorer,
                               std::unordered_map<std::string, float> hot_words)
 {
@@ -104,7 +104,7 @@ CTCDecoderForWav2vec2AM::init(const Alphabet& alphabet,
     return err;
   }
   blank_id_ = blank_id;
-  ignored_symbols_ = std::unordered_set<int>(ignored_symbols.begin(), ignored_symbols.end());
+  ignored_symbols_ = std::unordered_set<unsigned int>(ignored_symbols.begin(), ignored_symbols.end());
   init_token_mapping();
   return 0;
 }
@@ -594,7 +594,7 @@ std::vector<Output> ctc_beam_search_decoder_for_wav2vec2am(
     double cutoff_prob,
     size_t cutoff_top_n,
     int blank_id,
-    const std::vector<int> ignored_symbols,
+    const std::vector<unsigned int>& ignored_symbols,
     std::shared_ptr<Scorer> ext_scorer,
     std::unordered_map<std::string, float> hot_words,
     size_t num_results)
@@ -665,7 +665,7 @@ ctc_beam_search_decoder_batch_for_wav2vec2am(
     double cutoff_prob,
     size_t cutoff_top_n,
     int blank_id,
-    const std::vector<int> ignored_symbols,
+    const std::vector<unsigned int>& ignored_symbols,
     std::shared_ptr<Scorer> ext_scorer,
     std::unordered_map<std::string, float> hot_words,
     size_t num_results)
